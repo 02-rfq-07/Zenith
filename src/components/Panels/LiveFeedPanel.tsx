@@ -20,12 +20,13 @@ export default function LiveFeedPanel() {
       </div>
 
       <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-white/10 bg-black/50 z-10 shadow-inner">
-        {/* Official NASA ISS Stream via IBM Cloud Video (No YouTube branding) */}
+        {/* 24/7 Earth from Space Live Stream */}
         <iframe 
           className="w-full h-full object-cover scale-105"
-          src="https://video.ibm.com/embed/17074538?autoplay=1" 
-          title="NASA Live Stream" 
+          src="https://www.youtube.com/embed/86YLFOog4GM?autoplay=1&mute=1&controls=0&modestbranding=1" 
+          title="Live Orbital Feed" 
           frameBorder="0" 
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
           allowFullScreen
           style={{ border: 'none' }}
         ></iframe>

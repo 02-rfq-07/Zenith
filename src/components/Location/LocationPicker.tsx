@@ -64,50 +64,98 @@ export default function LocationPicker() {
   const combinedData = [...markerData, ...satelliteData];
 
   return (
-    <div ref={containerRef} className={`glass-panel hud-border p-4 rounded-2xl flex flex-col transition-all duration-500 z-50 ${isFullscreen ? 'fixed inset-4 shadow-2xl' : 'h-[300px] w-full'}`}>
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-[var(--theme-400)] font-mono tracking-widest uppercase text-xs font-bold flex items-center">
-          <Crosshair size={14} className="mr-2" /> Global Positioning
-        </h2>
-        <button 
-          onClick={() => setIsFullscreen(!isFullscreen)}
-          className="text-white/50 hover:text-[var(--theme-400)] transition-colors"
-        >
-          {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
-        </button>
+    <>
+      <div className="glass-panel hud-border p-4 rounded-2xl h-[300px] flex flex-col z-10 relative">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-[var(--theme-400)] font-mono tracking-widest uppercase text-xs font-bold flex items-center">
+            <Crosshair size={14} className="mr-2" /> Global Positioning
+          </h2>
+          <button 
+            onClick={() => setIsFullscreen(true)}
+            className="text-white/50 hover:text-[var(--theme-400)] transition-colors"
+            title="Expand Map"
+          >
+            <Maximize size={16} />
+          </button>
+        </div>
+
+        <div className="relative flex-1 rounded-xl overflow-hidden cursor-crosshair border border-white/10">
+          {typeof window !== 'undefined' && (
+            <Globe
+              ref={globeRef}
+              globeImageUrl="https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
+              bumpImageUrl="https://unpkg.com/three-globe/example/img/earth-topology.png"
+              backgroundImageUrl="https://unpkg.com/three-globe/example/img/night-sky.png"
+              backgroundColor="rgba(0,0,0,0)"
+              onGlobeClick={handleGlobeClick}
+              onGlobeReady={() => setIsReady(true)}
+              htmlElementsData={combinedData}
+              htmlElement={(d: any) => {
+                const el = document.createElement('div');
+                if (d.isMarker) {
+                   el.innerHTML = `
+                    <div class="relative flex items-center justify-center">
+                      <div class="absolute w-4 h-4 bg-red-400 rounded-full animate-ping opacity-75"></div>
+                      <div class="relative w-2 h-2 bg-red-500 rounded-full shadow-[0_0_10px_red]"></div>
+                    </div>
+                  `;
+                } else {
+                   el.innerHTML = `<div style="width: 4px; height: 4px; background-color: var(--theme-400, #22d3ee); border-radius: 50%; box-shadow: 0 0 10px var(--theme-400, #22d3ee);"></div>`;
+                }
+                return el;
+              }}
+            />
+          )}
+        </div>
+        <div className="absolute bottom-6 left-6 z-10 bg-black/50 backdrop-blur-md px-3 py-1 rounded-md text-xs text-white/80 font-mono border border-white/10 pointer-events-none">
+          {latitude !== 0 ? `${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°` : 'Click to select location'}
+        </div>
       </div>
 
-      <div className={`relative flex-1 rounded-xl overflow-hidden cursor-crosshair border border-white/10 ${isFullscreen ? 'mt-4' : ''}`}>
-        {typeof window !== 'undefined' && (
-          <Globe
-            ref={globeRef}
-            globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
-            bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
-            backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
-            backgroundColor="rgba(0,0,0,0)"
-            onGlobeClick={handleGlobeClick}
-            onGlobeReady={() => setIsReady(true)}
-            htmlElementsData={combinedData}
-            htmlElement={(d: any) => {
-              const el = document.createElement('div');
-              if (d.isMarker) {
-                 el.innerHTML = `
-                  <div class="relative flex items-center justify-center">
-                    <div class="absolute w-4 h-4 bg-red-400 rounded-full animate-ping opacity-75"></div>
-                    <div class="relative w-2 h-2 bg-red-500 rounded-full shadow-[0_0_10px_red]"></div>
-                  </div>
-                `;
-              } else {
-                 el.innerHTML = `<div style="width: 4px; height: 4px; background-color: var(--theme-400, #22d3ee); border-radius: 50%; box-shadow: 0 0 10px var(--theme-400, #22d3ee);"></div>`;
-              }
-              return el;
-            }}
-          />
-        )}
-      </div>
-      <div className="absolute bottom-6 left-6 z-10 bg-black/50 backdrop-blur-md px-3 py-1 rounded-md text-xs text-white/80 font-mono border border-white/10 pointer-events-none">
-        {latitude !== 0 ? `${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°` : 'Click to select location'}
-      </div>
-    </div>
+      {/* Fullscreen Popup Modal */}
+      {isFullscreen && (
+        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex flex-col p-8">
+           <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-2xl font-black text-white tracking-[0.2em] uppercase glitch-text">Tactical Global View</h2>
+                <p className="text-[var(--theme-400)] font-mono tracking-widest uppercase text-xs mt-1">Select operating coordinates</p>
+              </div>
+              <button 
+                onClick={() => setIsFullscreen(false)}
+                className="bg-[var(--theme-500)] text-black px-6 py-3 rounded-full font-mono uppercase tracking-widest font-bold shadow-[0_0_20px_rgba(var(--theme-rgb),0.5)] hover:bg-white transition-colors"
+              >
+                Confirm & Return to Radar
+              </button>
+           </div>
+           
+           <div className="flex-1 relative rounded-3xl overflow-hidden border border-[var(--theme-500)]/30 shadow-[0_0_50px_rgba(var(--theme-rgb),0.2)]">
+             {typeof window !== 'undefined' && (
+                <Globe
+                  globeImageUrl="https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
+                  bumpImageUrl="https://unpkg.com/three-globe/example/img/earth-topology.png"
+                  backgroundImageUrl="https://unpkg.com/three-globe/example/img/night-sky.png"
+                  backgroundColor="rgba(0,0,0,0)"
+                  onGlobeClick={handleGlobeClick}
+                  htmlElementsData={combinedData}
+                  htmlElement={(d: any) => {
+                    const el = document.createElement('div');
+                    if (d.isMarker) {
+                       el.innerHTML = `
+                        <div class="relative flex items-center justify-center">
+                          <div class="absolute w-8 h-8 bg-red-400 rounded-full animate-ping opacity-75"></div>
+                          <div class="relative w-4 h-4 bg-red-500 rounded-full shadow-[0_0_20px_red]"></div>
+                        </div>
+                      `;
+                    } else {
+                       el.innerHTML = `<div style="width: 6px; height: 6px; background-color: var(--theme-400, #22d3ee); border-radius: 50%; box-shadow: 0 0 15px var(--theme-400, #22d3ee);"></div>`;
+                    }
+                    return el;
+                  }}
+                />
+              )}
+           </div>
+        </div>
+      )}
+    </>
   );
 }
