@@ -26,12 +26,12 @@ export default function LiveZenithRadar({ satellites }: LiveZenithRadarProps) {
       <div className="absolute inset-8 pointer-events-none rounded-full border-t border-[var(--theme-300)]/30 animate-[spin_20s_linear_infinite_reverse]" />
       
       {/* Sci-fi data streams on corners */}
-      <div className="absolute top-0 left-0 text-[8px] text-[var(--theme-400)]/40 font-mono text-left leading-tight hidden md:block">
+      <div className="absolute top-0 left-0 text-[8px] text-[var(--theme-400)]/40 font-mono text-left leading-tight hidden md:block z-40 pointer-events-none">
          [SYS.OP.01] NORMAL<br/>
          AZ_OFFSET: {(Math.random() * 0.5).toFixed(4)}<br/>
          EL_REF: {(Math.random() * 90).toFixed(4)}
       </div>
-      <div className="absolute bottom-0 right-0 text-[8px] text-[var(--theme-400)]/40 font-mono text-right leading-tight hidden md:block">
+      <div className="absolute bottom-0 right-0 text-[8px] text-[var(--theme-400)]/40 font-mono text-right leading-tight hidden md:block z-40 pointer-events-none">
          T_OFFSET: {timeOffset}s<br/>
          ORBIT_SYNC: OK<br/>
          LAT: {latitude.toFixed(2)}
@@ -94,11 +94,10 @@ export default function LiveZenithRadar({ satellites }: LiveZenithRadarProps) {
                 exit={{ opacity: 0, scale: 0 }}
                 transition={{ type: "spring", stiffness: 200, damping: 20 }}
                 onClick={() => setSelectedObject(sat.id)}
-                className={`absolute flex items-center justify-center w-6 h-6 z-30 group cursor-crosshair`}
+                className={`absolute flex items-center justify-center w-6 h-6 -ml-3 -mt-3 z-50 group cursor-crosshair`}
                 style={{
                   left: `${x}%`,
                   top: `${y}%`,
-                  transform: 'translate(-50%, -50%)',
                 }}
                 title={sat.name}
               >

@@ -12,6 +12,7 @@ import ObjectInfoPanel from '@/components/Panels/ObjectInfoPanel';
 import ZenithTimeMachine from '@/components/Controls/ZenithTimeMachine';
 import DebrisLens from '@/components/Lenses/DebrisLens';
 import SkyVisibilityScore from '@/components/Panels/SkyVisibilityScore';
+import GlobalPreviewPanel from '@/components/Panels/GlobalPreviewPanel';
 import CosmicHistoryCards from '@/components/Panels/CosmicHistoryCards';
 import LiveFeedPanel from '@/components/Panels/LiveFeedPanel';
 import ThemePicker from '@/components/Controls/ThemePicker';
@@ -129,6 +130,7 @@ export default function RadarDashboard() {
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
           <motion.div layout className="w-full"><LocationPicker /></motion.div>
+          <motion.div layout className="w-full"><GlobalPreviewPanel /></motion.div>
           <motion.div layout className="w-full"><SkyVisibilityScore /></motion.div>
           <motion.div layout className="w-full"><DebrisLens /></motion.div>
         </motion.div>
@@ -165,14 +167,6 @@ export default function RadarDashboard() {
             </div>
           )}
           
-          {/* Tracking Matrix Portal */}
-          <motion.div layout className="w-full mt-4 flex justify-center">
-             <Link href="/solar-system" className="glass-panel px-6 py-3 rounded-full border border-[var(--theme-500)]/50 flex items-center space-x-3 text-white hover:bg-[var(--theme-500)]/20 transition-all shadow-[0_0_20px_rgba(var(--theme-rgb),0.2)]">
-                <div className="w-3 h-3 bg-[var(--theme-400)] rounded-full animate-ping" />
-                <span className="font-mono uppercase tracking-widest text-sm font-bold text-[var(--theme-400)]">Enter Global Tracking Matrix</span>
-             </Link>
-          </motion.div>
-
           <motion.div layout className="w-full mt-6">
             <LiveFeedPanel />
           </motion.div>

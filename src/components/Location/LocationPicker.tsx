@@ -85,7 +85,6 @@ export default function LocationPicker() {
               ref={globeRef}
               globeImageUrl="https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
               bumpImageUrl="https://unpkg.com/three-globe/example/img/earth-topology.png"
-              backgroundImageUrl="https://unpkg.com/three-globe/example/img/night-sky.png"
               backgroundColor="rgba(0,0,0,0)"
               onGlobeClick={handleGlobeClick}
               onGlobeReady={() => setIsReady(true)}
@@ -122,7 +121,7 @@ export default function LocationPicker() {
               </div>
               <button 
                 onClick={() => setIsFullscreen(false)}
-                className="bg-[var(--theme-500)] text-black px-6 py-3 rounded-full font-mono uppercase tracking-widest font-bold shadow-[0_0_20px_rgba(var(--theme-rgb),0.5)] hover:bg-white transition-colors"
+                className="bg-white text-black hover:bg-[var(--theme-500)] px-6 py-3 rounded-full font-mono uppercase tracking-widest font-bold shadow-[0_0_20px_rgba(255,255,255,0.5)] transition-colors"
               >
                 Confirm & Return to Radar
               </button>

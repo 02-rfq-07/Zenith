@@ -33,10 +33,13 @@ function Earth() {
   );
 }
 
-// Moon & Mars (Visuals)
 function CelestialBodies() {
   const moonDistance = 384400 * SCALE * 0.1; // Scaled down distance for visibility
   const marsDistance = 800000 * SCALE * 0.1; 
+  const jupiterDistance = 1500000 * SCALE * 0.1;
+  const saturnDistance = 2500000 * SCALE * 0.1;
+  const uranusDistance = 3500000 * SCALE * 0.1;
+  const neptuneDistance = 4500000 * SCALE * 0.1;
   
   return (
     <>
@@ -47,6 +50,26 @@ function CelestialBodies() {
       <mesh position={[-marsDistance, 0, marsDistance]}>
         <sphereGeometry args={[3389 * SCALE, 32, 32]} />
         <meshStandardMaterial color="#b91c1c" roughness={0.8} />
+      </mesh>
+      <mesh position={[jupiterDistance, 50, -jupiterDistance]}>
+        <sphereGeometry args={[69911 * SCALE * 0.2, 64, 64]} />
+        <meshStandardMaterial color="#d97706" roughness={0.6} />
+      </mesh>
+      <mesh position={[-saturnDistance, -50, -saturnDistance]}>
+        <sphereGeometry args={[58232 * SCALE * 0.2, 64, 64]} />
+        <meshStandardMaterial color="#fcd34d" roughness={0.5} />
+        <mesh rotation={[Math.PI / 2.5, 0, 0]}>
+          <ringGeometry args={[58232 * SCALE * 0.25, 58232 * SCALE * 0.45, 64]} />
+          <meshBasicMaterial color="#fde68a" transparent opacity={0.6} side={THREE.DoubleSide} />
+        </mesh>
+      </mesh>
+      <mesh position={[uranusDistance, 100, uranusDistance]}>
+        <sphereGeometry args={[25362 * SCALE * 0.2, 32, 32]} />
+        <meshStandardMaterial color="#bae6fd" roughness={0.4} />
+      </mesh>
+      <mesh position={[-neptuneDistance, -100, neptuneDistance]}>
+        <sphereGeometry args={[24622 * SCALE * 0.2, 32, 32]} />
+        <meshStandardMaterial color="#2563eb" roughness={0.4} />
       </mesh>
     </>
   );
@@ -83,8 +106,9 @@ function GlobalConstellation({ tles, timeOffset }: { tles: {satrec: satellite.Sa
 
   return (
     <instancedMesh ref={meshRef} args={[undefined, undefined, tles.length]}>
-      <octahedronGeometry args={[0.08, 0]} />
-      <meshBasicMaterial color="var(--theme-400, #22d3ee)" transparent opacity={0.6} />
+      {/* Box shaped satellite body representing a real satellite rather than a dot */}
+      <boxGeometry args={[0.2, 0.05, 0.15]} />
+      <meshStandardMaterial color="var(--theme-400, #22d3ee)" roughness={0.2} metalness={0.8} emissive="var(--theme-500, #06b6d4)" emissiveIntensity={0.5} />
     </instancedMesh>
   );
 }
@@ -119,18 +143,15 @@ function TargetSatellite({ satrec, timeOffset, isRideMode, velocity }: { satrec:
       const x = pos.x * SCALE;
       const y = pos.z * SCALE;
       const z = -pos.y * SCALE;
-      groupRef.current.position.set(x, y, z);
+      const satPos = new THREE.Vector3(x, y, z);
+      
+      groupRef.current.position.copy(satPos);
       
       const target = new THREE.Vector3(x + vel.x, y + vel.z, z - vel.y);
       groupRef.current.lookAt(target);
 
       const speed = Math.sqrt(vel.x*vel.x + vel.y*vel.y + vel.z*vel.z);
       velocity(speed);
-
-      if (isRideMode) {
-        camera.position.set(x * 1.05, y * 1.05, z * 1.05);
-        camera.lookAt(0, 0, 0); 
-      }
     }
   });
 
@@ -155,18 +176,45 @@ export default function SolarSystemViewer() {
   const targetId = searchParams.get('target');
   const { timeOffset, setTimeOffset } = useRadarStore();
   
-  const [tles, setTles] = useState<{satrec: satellite.SatRec, type: string}[]>([]);
+  const [tles, setTles] = useState<{satrec: satellite.SatRec, type: string, id: string, name: string}[]>([]);
   const [targetSatrec, setTargetSatrec] = useState<satellite.SatRec | null>(null);
   const [satName, setSatName] = useState('GLOBAL CONSTELLATION');
   const [isRideMode, setIsRideMode] = useState(false);
   const [currentSpeed, setCurrentSpeed] = useState(0);
+  const controlsRef = useRef<any>(null);
+
+  // Smooth camera tracking hook
+  useFrame((state) => {
+    if (!controlsRef.current) return;
+    
+    if (isRideMode && targetSatrec) {
+      const d = new Date(Date.now() + timeOffset * 60000);
+      const pv = satellite.propagate(targetSatrec, d);
+      const pos = pv.position as satellite.EciVec3<number>;
+      if (pos) {
+        const satPos = new THREE.Vector3(pos.x * SCALE, pos.z * SCALE, -pos.y * SCALE);
+        // Smoothly track the target
+        controlsRef.current.target.lerp(satPos, 0.05);
+        
+        // Gently pull camera closer if far away
+        const dist = state.camera.position.distanceTo(satPos);
+        if (dist > 3) {
+          const desiredPos = satPos.clone().add(new THREE.Vector3(1, 1, 1).normalize().multiplyScalar(2));
+          state.camera.position.lerp(desiredPos, 0.02);
+        }
+      }
+    } else {
+      // Return to Earth center
+      controlsRef.current.target.lerp(new THREE.Vector3(0, 0, 0), 0.05);
+    }
+  });
 
   useEffect(() => {
     fetch('/active.txt')
       .then(r => r.text())
       .then(text => {
         const lines = text.split('\n').map(l => l.trim());
-        const all: {satrec: satellite.SatRec, type: string}[] = [];
+        const all: {satrec: satellite.SatRec, type: string, id: string, name: string}[] = [];
         for (let i = 0; i < lines.length - 2; i += 3) {
           const name = lines[i];
           const tle1 = lines[i+1];
@@ -176,10 +224,11 @@ export default function SolarSystemViewer() {
             const type = (name.includes('DEB') || name.includes('R/B')) ? 'DEBRIS' : 'PAYLOAD';
             try {
               const rec = satellite.twoline2satrec(tle1, tle2);
-              all.push({ satrec: rec, type });
+              all.push({ satrec: rec, type, id, name });
               if (targetId && id === targetId) {
                 setTargetSatrec(rec);
                 setSatName(name);
+                setIsRideMode(true);
               }
             } catch (e) {}
           }
@@ -203,6 +252,27 @@ export default function SolarSystemViewer() {
             <p className="text-[var(--theme-400)] font-mono tracking-widest uppercase text-xs mt-1">
               Live 3D Orbital Tracking Matrix
             </p>
+          </div>
+          
+          {/* NASA Eyes Sidebar: Featured Targets */}
+          <div className="mt-8 ml-2 pointer-events-auto">
+             <div className="text-[10px] text-white/50 uppercase tracking-widest font-mono mb-3">Featured Targets</div>
+             <div className="flex flex-col space-y-2 max-h-[50vh] overflow-y-auto scrollbar-hide pr-4">
+                {tles.filter(t => t.name.includes('ISS') || t.name.includes('HUBBLE') || t.name.includes('NOAA') || t.name.includes('STARLINK')).slice(0, 15).map(sat => (
+                   <button
+                     key={sat.id}
+                     onClick={() => {
+                        setTargetSatrec(sat.satrec);
+                        setSatName(sat.name);
+                        setIsRideMode(true);
+                     }}
+                     className="glass-panel px-4 py-3 rounded-xl border border-white/10 hover:border-[var(--theme-500)]/50 hover:bg-[var(--theme-500)]/10 text-left transition-all group"
+                   >
+                     <div className="text-white font-bold text-sm truncate">{sat.name}</div>
+                     <div className="text-[10px] text-[var(--theme-400)] font-mono uppercase tracking-widest mt-1 group-hover:animate-pulse">Track Object</div>
+                   </button>
+                ))}
+             </div>
           </div>
         </div>
 
@@ -262,7 +332,7 @@ export default function SolarSystemViewer() {
           </>
         )}
 
-        {!isRideMode && <OrbitControls enablePan={true} enableZoom={true} minDistance={8} maxDistance={200} autoRotate={!targetSatrec} autoRotateSpeed={0.5} />}
+        <OrbitControls ref={controlsRef} enablePan={true} enableZoom={true} minDistance={0.5} maxDistance={200} />
       </Canvas>
     </div>
   );
