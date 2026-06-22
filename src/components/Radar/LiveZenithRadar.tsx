@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ZenithSatellite } from '@/workers/orbitalWorker';
 import { useRadarStore } from '@/store/useRadarStore';
 
@@ -14,8 +13,8 @@ export default function LiveZenithRadar({ satellites }: LiveZenithRadarProps) {
 
   const filteredSatellites = satellites.filter((sat) => {
     const isDeb = sat.type === 'DEBRIS' || sat.type === 'ROCKET BODY';
-    if (showDebris) return isDeb;
-    return !isDeb;
+    if (showDebris) return true; // Show both payloads and debris
+    return !isDeb; // Show only payloads
   });
 
   return (
@@ -70,51 +69,42 @@ export default function LiveZenithRadar({ satellites }: LiveZenithRadarProps) {
         <div className="absolute inset-0 radar-sweep-cone z-10 pointer-events-none" />
 
         {/* Satellites */}
-        <AnimatePresence>
-          {filteredSatellites.map((sat) => {
-            // Elevation 90 is center (radius 0), Elevation 0 is edge (radius 50%)
-            const maxRadius = 50; 
-            const normalizedRadius = ((90 - sat.elevation) / 90) * maxRadius;
-            
-            // Convert azimuth (degrees) and radius (%) to left/top (%)
-            const rad = (sat.azimuth - 90) * (Math.PI / 180);
-            const x = 50 + normalizedRadius * Math.cos(rad);
-            const y = 50 + normalizedRadius * Math.sin(rad);
+        {filteredSatellites.map((sat) => {
+          // Elevation 90 is center (radius 0), Elevation 0 is edge (radius 50%)
+          const maxRadius = 50; 
+          const normalizedRadius = ((90 - sat.elevation) / 90) * maxRadius;
+          
+          // Convert azimuth (degrees) and radius (%) to left/top (%)
+          const rad = (sat.azimuth - 90) * (Math.PI / 180);
+          const x = 50 + normalizedRadius * Math.cos(rad);
+          const y = 50 + normalizedRadius * Math.sin(rad);
 
-            const isSelected = selectedObjectId === sat.id;
-            const isDebris = sat.type === 'DEBRIS' || sat.type === 'ROCKET BODY';
-            const colorClass = isDebris ? 'bg-red-500' : 'bg-[var(--theme-400)]';
-            const shadowClass = isDebris ? 'shadow-[0_0_15px_red]' : 'shadow-[0_0_15px_rgba(var(--theme-rgb),1)]';
+          const isSelected = selectedObjectId === sat.id;
+          const isDebris = sat.type === 'DEBRIS' || sat.type === 'ROCKET BODY';
+          const colorClass = isDebris ? 'bg-red-500' : 'bg-[var(--theme-400)]';
+          const shadowClass = isDebris ? 'shadow-[0_0_15px_red]' : 'shadow-[0_0_15px_rgba(var(--theme-rgb),1)]';
 
-            return (
-              <motion.button
-                key={sat.id}
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0 }}
-                transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                onClick={() => setSelectedObject(sat.id)}
-                className={`absolute flex items-center justify-center w-6 h-6 -ml-3 -mt-3 z-50 group cursor-crosshair`}
-                style={{
-                  left: `${x}%`,
-                  top: `${y}%`,
-                }}
-                title={sat.name}
-              >
-                {/* The actual dot */}
-                <div className={`w-2.5 h-2.5 rounded-full ${colorClass} ${shadowClass} group-hover:scale-150 transition-transform`} />
-                
-                {/* Selection Ring */}
-                {isSelected && (
-                  <motion.div 
-                    layoutId="selection-ring"
-                    className="absolute inset-0 rounded-full border border-white animate-[spin_3s_linear_infinite]"
-                  />
-                )}
-              </motion.button>
-            );
-          })}
-        </AnimatePresence>
+          return (
+            <button
+              key={sat.id}
+              onClick={() => setSelectedObject(sat.id)}
+              className={`absolute flex items-center justify-center w-6 h-6 -ml-3 -mt-3 z-50 group cursor-crosshair`}
+              style={{
+                left: `${x}%`,
+                top: `${y}%`,
+              }}
+              title={sat.name}
+            >
+              {/* The actual dot */}
+              <div className={`w-2.5 h-2.5 rounded-full ${colorClass} ${shadowClass} group-hover:scale-150 transition-transform`} />
+              
+              {/* Selection Ring */}
+              {isSelected && (
+                <div className="absolute inset-0 rounded-full border border-white animate-[spin_3s_linear_infinite]" />
+              )}
+            </button>
+          );
+        })}
       </div>
       
       {/* Decorative Corner Borders */}

@@ -11,7 +11,9 @@ const Globe = dynamic(() => import('react-globe.gl'), { ssr: false });
 export default function LocationPicker() {
   const { latitude, longitude, setCoordinates, timeOffset } = useRadarStore();
   const globeRef = useRef<any>(null);
+  const fullGlobeRef = useRef<any>(null);
   const [isReady, setIsReady] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [tles, setTles] = useState<satellite.SatRec[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -39,7 +41,7 @@ export default function LocationPicker() {
     return tles.map(satrec => {
       try {
         const pv = satellite.propagate(satrec, d);
-        if (!pv.position || typeof pv.position === 'boolean') return null;
+        if (!pv || typeof pv === 'boolean' || typeof pv.position === 'boolean' || !pv.position) return null;
         const gd = satellite.eciToGeodetic(pv.position, gmst);
         return {
           lat: satellite.degreesLat(gd.latitude),
@@ -83,9 +85,17 @@ export default function LocationPicker() {
           {typeof window !== 'undefined' && (
             <Globe
               ref={globeRef}
-              globeImageUrl="https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
-              bumpImageUrl="https://unpkg.com/three-globe/example/img/earth-topology.png"
+              showGlobe={true}
+              showAtmosphere={true}
+              atmosphereColor="#22d3ee"
+              atmosphereAltitude={0.2}
+              globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
+              bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
+              // Fallback polygon rendering if image fails
+              hexPolygonColor={() => 'rgba(34, 211, 238, 0.4)'}
               backgroundColor="rgba(0,0,0,0)"
+              width={220}
+              height={220}
               onGlobeClick={handleGlobeClick}
               onGlobeReady={() => setIsReady(true)}
               htmlElementsData={combinedData}
@@ -130,10 +140,16 @@ export default function LocationPicker() {
            <div className="flex-1 relative rounded-3xl overflow-hidden border border-[var(--theme-500)]/30 shadow-[0_0_50px_rgba(var(--theme-rgb),0.2)]">
              {typeof window !== 'undefined' && (
                 <Globe
-                  globeImageUrl="https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
-                  bumpImageUrl="https://unpkg.com/three-globe/example/img/earth-topology.png"
-                  backgroundImageUrl="https://unpkg.com/three-globe/example/img/night-sky.png"
-                  backgroundColor="rgba(0,0,0,0)"
+                  ref={fullGlobeRef}
+                  showGlobe={true}
+                  showAtmosphere={true}
+                  atmosphereColor="#22d3ee"
+                  atmosphereAltitude={0.15}
+                  globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
+                  bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
+                  // Fallback styling
+                  hexPolygonColor={() => 'rgba(34, 211, 238, 0.4)'}
+                  backgroundColor="#000000"
                   onGlobeClick={handleGlobeClick}
                   htmlElementsData={combinedData}
                   htmlElement={(d: any) => {

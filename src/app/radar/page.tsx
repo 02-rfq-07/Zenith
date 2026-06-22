@@ -63,9 +63,11 @@ export default function RadarDashboard() {
   // Update Worker when params change
   useEffect(() => {
     if (workerRef.current && !loading) {
-      let interval = setInterval(() => {
+      const updateWorker = () => {
         workerRef.current?.postMessage({ type: 'UPDATE', latitude, longitude, timeOffset });
-      }, 1000);
+      };
+      updateWorker();
+      let interval = setInterval(updateWorker, 1000);
       return () => clearInterval(interval);
     }
   }, [latitude, longitude, timeOffset, loading]);

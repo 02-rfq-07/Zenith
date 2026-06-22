@@ -4,10 +4,10 @@ import React, { useState } from 'react';
 import { Video } from 'lucide-react';
 
 const FEEDS = [
-  { id: 'nasa', name: 'NASA HDEV', url: 'https://www.youtube.com/embed/86YLFOog4GM?autoplay=1&mute=1&controls=0&modestbranding=1' },
-  { id: 'spacex', name: 'SpaceX Starlink', url: 'https://www.youtube.com/embed/jPTD2gspGtw?autoplay=1&mute=1&controls=0&modestbranding=1' },
-  { id: 'roscosmos', name: 'Roscosmos Orbital', url: 'https://www.youtube.com/embed/xRPjKQtRXR8?autoplay=1&mute=1&controls=0&modestbranding=1' },
-  { id: 'isro', name: 'ISRO Telemetry', url: 'https://www.youtube.com/embed/21X5lGlDOfg?autoplay=1&mute=1&controls=0&modestbranding=1' },
+  { id: 'nasa', name: 'NASA HDEV', url: 'https://www.youtube.com/embed/21X5lGlDOfg?autoplay=1&mute=1&controls=0&modestbranding=1' },
+  { id: 'iss', name: 'ISS Live', url: 'https://www.youtube.com/embed/xRPjKQtRXR8?autoplay=1&mute=1&controls=0&modestbranding=1' },
+  { id: 'roscosmos', name: 'Roscosmos Orbital', url: 'https://www.youtube.com/embed/21X5lGlDOfg?autoplay=1&mute=1&controls=0&modestbranding=1' },
+  { id: 'isro', name: 'ISRO Telemetry', url: 'https://www.youtube.com/embed/xRPjKQtRXR8?autoplay=1&mute=1&controls=0&modestbranding=1' },
 ];
 
 export default function LiveFeedPanel() {
