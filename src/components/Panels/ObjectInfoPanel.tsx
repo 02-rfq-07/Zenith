@@ -5,9 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ZenithSatellite } from '@/workers/orbitalWorker';
 import { useRadarStore } from '@/store/useRadarStore';
 import { Info, Target, Compass, Navigation, Satellite as SatelliteIcon, Share2 } from 'lucide-react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import Link from 'next/link';
+import { DynamicSatellite } from '@/components/3D/DynamicSatellite';
 
 interface ObjectInfoPanelProps {
   satellites: ZenithSatellite[];
@@ -56,27 +57,18 @@ export default function ObjectInfoPanel({ satellites }: ObjectInfoPanelProps) {
                
                <div className="absolute inset-0">
                  <Canvas camera={{ position: [2, 1.5, 2], fov: 45 }}>
-                   <ambientLight intensity={0.5} />
-                   <directionalLight position={[10, 10, 5]} intensity={1.5} />
-                   <pointLight position={[-10, -10, -10]} intensity={0.5} color="#22d3ee" />
-                   <OrbitControls autoRotate autoRotateSpeed={2} enableZoom={false} enablePan={false} />
+                   <ambientLight intensity={1.5} />
+                   <directionalLight position={[10, 10, 5]} intensity={2.0} />
+                   <directionalLight position={[-10, 10, -5]} intensity={1.0} color="#60a5fa" />
+                   <pointLight position={[-10, -10, -10]} intensity={1.0} color="#22d3ee" />
+                   <OrbitControls autoRotate autoRotateSpeed={2} enableZoom={true} enablePan={false} />
                    
                    {isDebris ? (
-                      <mesh>
-                        <dodecahedronGeometry args={[0.5, 0]} />
-                        <meshStandardMaterial color="#ef4444" roughness={0.9} metalness={0.1} />
-                      </mesh>
+                      <DynamicSatellite name={selectedSat.name} isDebris={true} dashboardMode={true} />
                    ) : (
-                     <group>
-                        <mesh>
-                          <boxGeometry args={[0.4, 0.4, 0.8]} />
-                          <meshStandardMaterial color="#fff" metalness={0.5} roughness={0.2} emissive="#06b6d4" emissiveIntensity={0.5} />
-                        </mesh>
-                        <mesh position={[0, 0, 0.5]} rotation={[Math.PI/2, 0, 0]}>
-                           <cylinderGeometry args={[0.2, 0.2, 0.1, 16]} />
-                           <meshStandardMaterial color="#d4d4d8" metalness={0.8} />
-                        </mesh>
-                     </group>
+                      <group position={[0, -0.2, 0]}>
+                         <DynamicSatellite name={selectedSat.name} isDebris={false} dashboardMode={true} />
+                      </group>
                    )}
                  </Canvas>
                </div>
