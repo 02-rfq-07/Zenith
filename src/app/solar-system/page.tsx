@@ -171,19 +171,7 @@ function TargetSatellite({ satrec, timeOffset, isRideMode, velocity }: { satrec:
   );
 }
 
-export default function SolarSystemViewer() {
-  const searchParams = useSearchParams();
-  const targetId = searchParams.get('target');
-  const { timeOffset, setTimeOffset } = useRadarStore();
-  
-  const [tles, setTles] = useState<{satrec: satellite.SatRec, type: string, id: string, name: string}[]>([]);
-  const [targetSatrec, setTargetSatrec] = useState<satellite.SatRec | null>(null);
-  const [satName, setSatName] = useState('GLOBAL CONSTELLATION');
-  const [isRideMode, setIsRideMode] = useState(false);
-  const [currentSpeed, setCurrentSpeed] = useState(0);
-  const controlsRef = useRef<any>(null);
-
-  // Smooth camera tracking hook
+function CameraController({ isRideMode, targetSatrec, timeOffset, controlsRef }: { isRideMode: boolean, targetSatrec: satellite.SatRec | null, timeOffset: number, controlsRef: any }) {
   useFrame((state) => {
     if (!controlsRef.current) return;
     
@@ -208,6 +196,21 @@ export default function SolarSystemViewer() {
       controlsRef.current.target.lerp(new THREE.Vector3(0, 0, 0), 0.05);
     }
   });
+
+  return null;
+}
+
+export default function SolarSystemViewer() {
+  const searchParams = useSearchParams();
+  const targetId = searchParams.get('target');
+  const { timeOffset, setTimeOffset } = useRadarStore();
+  
+  const [tles, setTles] = useState<{satrec: satellite.SatRec, type: string, id: string, name: string}[]>([]);
+  const [targetSatrec, setTargetSatrec] = useState<satellite.SatRec | null>(null);
+  const [satName, setSatName] = useState('GLOBAL CONSTELLATION');
+  const [isRideMode, setIsRideMode] = useState(false);
+  const [currentSpeed, setCurrentSpeed] = useState(0);
+  const controlsRef = useRef<any>(null);
 
   useEffect(() => {
     fetch('/active.txt')
@@ -331,7 +334,7 @@ export default function SolarSystemViewer() {
             <TargetSatellite satrec={targetSatrec} timeOffset={timeOffset} isRideMode={isRideMode} velocity={setCurrentSpeed} />
           </>
         )}
-
+        <CameraController isRideMode={isRideMode} targetSatrec={targetSatrec} timeOffset={timeOffset} controlsRef={controlsRef} />
         <OrbitControls ref={controlsRef} enablePan={true} enableZoom={true} minDistance={0.5} maxDistance={200} />
       </Canvas>
     </div>
