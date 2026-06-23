@@ -6,7 +6,7 @@ import { OrbitControls, Stars, Line, Html, useTexture, useGLTF } from '@react-th
 import * as THREE from 'three';
 import * as satellite from 'satellite.js';
 import Link from 'next/link';
-import { ChevronLeft, Camera, Navigation, Zap, Globe, Info } from 'lucide-react';
+import { ChevronLeft, Camera, Navigation, Zap, Globe, Info, ZoomIn, ZoomOut, RotateCcw, Sun } from 'lucide-react';
 import { useRadarStore } from '@/store/useRadarStore';
 import { useSearchParams } from 'next/navigation';
 import { DynamicSatellite, getSatelliteModelInfo } from '@/components/3D/DynamicSatellite';
@@ -1280,21 +1280,64 @@ export default function SolarSystemViewer() {
            <span>Back to Earth</span>
          </button>
 
-         <button 
-           onClick={() => setShowOrbitPaths(!showOrbitPaths)}
-           className={`px-4 py-2 rounded-full font-mono text-xs uppercase tracking-widest border transition-all flex items-center space-x-2 ${showOrbitPaths ? 'border-[var(--theme-500)] bg-[var(--theme-500)]/20 text-white shadow-[0_0_10px_rgba(var(--theme-rgb),0.3)]' : 'border-white/10 bg-black/50 text-white/50'}`}
-         >
-           <div className={`w-2 h-2 rounded-full ${showOrbitPaths ? 'bg-[var(--theme-400)] shadow-[0_0_8px_var(--theme-400)]' : 'bg-white/20'}`} />
-           <span>Orbit Paths</span>
-         </button>
-         
-         <button 
-           onClick={() => setShowTorchlight(!showTorchlight)}
-           className={`px-4 py-2 rounded-full font-mono text-xs uppercase tracking-widest border transition-all flex items-center space-x-2 ${showTorchlight ? 'border-[var(--theme-500)] bg-[var(--theme-500)]/20 text-white shadow-[0_0_10px_rgba(var(--theme-rgb),0.3)]' : 'border-white/10 bg-black/50 text-white/50'}`}
-         >
-           <div className={`w-2 h-2 rounded-full ${showTorchlight ? 'bg-yellow-400 shadow-[0_0_8px_#facc15]' : 'bg-white/20'}`} />
-           <span>Torchlight</span>
-         </button>
+         <div className="absolute bottom-6 right-6 z-20 flex flex-col items-end gap-3 pointer-events-auto">
+           <div className="flex space-x-4">
+             <button 
+               onClick={() => { setSelectedPlanet('Earth'); setManualTarget(null); setTargetSatrec(null); setIsRideMode(false); }}
+               className={`px-4 py-2 rounded-full font-mono text-xs uppercase tracking-widest border transition-all flex items-center space-x-2 border-white/10 bg-black/50 text-white/50 hover:text-white hover:bg-white/10`}
+             >
+               <span>Back to Earth</span>
+             </button>
+
+             <button 
+               onClick={() => setShowOrbitPaths(!showOrbitPaths)}
+               className={`px-4 py-2 rounded-full font-mono text-xs uppercase tracking-widest border transition-all flex items-center space-x-2 ${showOrbitPaths ? 'border-[var(--theme-500)] bg-[var(--theme-500)]/20 text-white shadow-[0_0_10px_rgba(var(--theme-rgb),0.3)]' : 'border-white/10 bg-black/50 text-white/50'}`}
+             >
+               <div className={`w-2 h-2 rounded-full ${showOrbitPaths ? 'bg-[var(--theme-400)] shadow-[0_0_8px_var(--theme-400)]' : 'bg-white/20'}`} />
+               <span>Orbit Paths</span>
+             </button>
+             
+             <button 
+               onClick={() => setShowTorchlight(!showTorchlight)}
+               className={`px-4 py-2 rounded-full font-mono text-xs uppercase tracking-widest border transition-all flex items-center space-x-2 ${showTorchlight ? 'border-[var(--theme-500)] bg-[var(--theme-500)]/20 text-white shadow-[0_0_10px_rgba(var(--theme-rgb),0.3)]' : 'border-white/10 bg-black/50 text-white/50'}`}
+             >
+               <div className={`w-2 h-2 rounded-full ${showTorchlight ? 'bg-yellow-400 shadow-[0_0_8px_#facc15]' : 'bg-white/20'}`} />
+               <span>Torchlight</span>
+             </button>
+           </div>
+
+           <div className="flex space-x-2 w-[140px] justify-between">
+              <button onClick={() => {
+                 const cam = (window as any).solarSystemCamera;
+                 const controls = (window as any).solarSystemControls;
+                 if (cam && controls) {
+                    const dir = new THREE.Vector3().subVectors(controls.target, cam.position).normalize();
+                    cam.position.add(dir.multiplyScalar(cam.position.distanceTo(controls.target) * 0.2));
+                 }
+              }} className="flex-1 flex justify-center items-center bg-black/50 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 p-2 rounded-full shadow-lg transition-colors">
+                 <ZoomIn size={16} />
+              </button>
+              <button onClick={() => {
+                 const cam = (window as any).solarSystemCamera;
+                 const controls = (window as any).solarSystemControls;
+                 if (cam && controls) {
+                    const dir = new THREE.Vector3().subVectors(cam.position, controls.target).normalize();
+                    cam.position.add(dir.multiplyScalar(cam.position.distanceTo(controls.target) * 0.25));
+                 }
+              }} className="flex-1 flex justify-center items-center bg-black/50 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 p-2 rounded-full shadow-lg transition-colors">
+                 <ZoomOut size={16} />
+              </button>
+              <button onClick={() => {
+                 setSelectedPlanet('Earth');
+                 setManualTarget(null);
+                 setTargetSatrec(null);
+                 setIsRideMode(false);
+              }} className="flex-1 flex justify-center items-center bg-black/50 border border-[var(--theme-500)]/50 text-[var(--theme-400)] hover:bg-[var(--theme-500)]/20 p-2 rounded-full shadow-[0_0_15px_rgba(var(--theme-rgb),0.3)] transition-colors">
+                 <RotateCcw size={16} />
+              </button>
+           </div>
+        </div>
+
       </div>
 
     </div>
