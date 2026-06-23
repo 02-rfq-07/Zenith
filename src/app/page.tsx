@@ -3,15 +3,22 @@
 import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
 
 import FloatingAstronaut from '@/components/UI/FloatingAstronaut';
+import LatestArticles from '@/components/Home/LatestArticles';
+import ZenithTerminal from '@/components/Home/ZenithTerminal';
+import SciFiDiary from '@/components/Home/SciFiDiary';
+import ZeroGHangman from '@/components/Home/ZeroGHangman';
+import UpcomingLaunches from '@/components/Home/UpcomingLaunches';
+import ZenithBot from '@/components/UI/ZenithBot';
 
 export default function Home() {
   const [stars, setStars] = React.useState<any[]>([]);
 
   React.useEffect(() => {
     // Generate random stars on the client to avoid SSR hydration mismatch
-    const generatedStars = [...Array(50)].map(() => ({
+    const generatedStars = [...Array(100)].map(() => ({
       width: Math.random() * 3 + 'px',
       height: Math.random() * 3 + 'px',
       top: Math.random() * 100 + '%',
@@ -23,37 +30,24 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="relative min-h-screen flex flex-col items-center justify-center bg-black overflow-hidden selection:bg-cyan-500/30">
-      {/* Background Starfield effect */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-cyan-900/20 via-black to-black"></div>
-        {/* Generate some random stars */}
+    <main className="relative min-h-screen flex flex-col items-center bg-[#020617] overflow-x-hidden selection:bg-cyan-500/30">
+      
+      {/* Background Starfield effect - fixed to viewport so it scrolls with the user */}
+      <div className="fixed inset-0 z-0">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-cyan-950/40 via-[#020617] to-[#020617]"></div>
         {stars.map((star, i) => (
           <motion.div
             key={i}
             className="absolute bg-white rounded-full"
-            style={{
-              width: star.width,
-              height: star.height,
-              top: star.top,
-              left: star.left,
-              opacity: star.opacity,
-            }}
-            animate={{
-              opacity: [0.2, 1, 0.2],
-              scale: [1, 1.5, 1],
-            }}
-            transition={{
-              duration: star.duration,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
+            style={{ width: star.width, height: star.height, top: star.top, left: star.left, opacity: star.opacity }}
+            animate={{ opacity: [0.2, 1, 0.2], scale: [1, 1.5, 1] }}
+            transition={{ duration: star.duration, repeat: Infinity, ease: "easeInOut" }}
           />
         ))}
       </div>
 
-      <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
-        <FloatingAstronaut />
+      {/* Hero Section (Min Height Screen) */}
+      <div id="section-hero" className="relative z-10 w-full min-h-screen flex flex-col items-center justify-center text-center px-4">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -93,7 +87,46 @@ export default function Home() {
             </span>
           </Link>
         </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 10 }}
+          transition={{ duration: 1.5, delay: 2, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+          className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center text-cyan-400/60 hover:text-cyan-400 transition-colors cursor-pointer"
+          onClick={() => document.getElementById('section-articles')?.scrollIntoView({ behavior: 'smooth' })}
+        >
+          <span className="font-mono text-[10px] tracking-widest mb-2 uppercase">Scroll To Explore</span>
+          <ChevronDown size={24} />
+        </motion.div>
       </div>
+
+      {/* Latest Articles Section */}
+      <div id="section-articles" className="relative w-full z-10 border-t border-cyan-900/30 bg-black/40 backdrop-blur-sm">
+         <LatestArticles />
+      </div>
+
+      {/* Upcoming Launches Section */}
+      <div id="section-launches" className="relative w-full z-10 border-t border-fuchsia-900/30 bg-[#050505]/60 backdrop-blur-sm">
+         <UpcomingLaunches />
+      </div>
+
+      {/* Sci-Fi Concept Diary Section */}
+      <div id="section-diary" className="relative w-full z-10 border-t border-stone-900/30 bg-[#121110]/80 backdrop-blur-md">
+         <SciFiDiary />
+      </div>
+
+      {/* Zenith Terminal Learning Resources */}
+      <div id="section-terminal" className="relative w-full z-10 border-t border-cyan-900/30 bg-[#050505]/90 backdrop-blur-lg">
+         <ZenithTerminal />
+      </div>
+
+      {/* Space Game Section */}
+      <div id="section-game" className="relative w-full z-10 border-t border-fuchsia-900/30 bg-black/60 backdrop-blur-sm pb-24">
+         <ZeroGHangman />
+      </div>
+
+      <FloatingAstronaut />
+      <ZenithBot />
     </main>
   );
 }
