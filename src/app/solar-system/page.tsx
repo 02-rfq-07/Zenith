@@ -15,15 +15,34 @@ const EARTH_RADIUS_KM = 6371;
 const SCALE = 1 / 1000;
 
 const PLANET_DATA = [
-  { name: 'Mercury', orbitRadius: 77, radius: 2.4, color: '#a8a29e', angle: 1.2, speed: 0.004, tilt: 0.034 * Math.PI / 180 },
-  { name: 'Venus', orbitRadius: 144, radius: 6, color: '#fcd34d', angle: 2.5, speed: 0.0015, tilt: 177.36 * Math.PI / 180 },
-  { name: 'Mars', orbitRadius: 300, radius: 3.3, color: '#b91c1c', angle: 4.1, speed: 0.0008, tilt: 25.19 * Math.PI / 180 },
-  { name: 'Jupiter', orbitRadius: 1040, radius: 15, color: '#d97706', angle: 0.5, speed: 0.0002, tilt: 3.13 * Math.PI / 180 },
-  { name: 'Saturn', orbitRadius: 1900, radius: 12, color: '#fde047', angle: 5.2, speed: 0.0001, tilt: 26.73 * Math.PI / 180 },
-  { name: 'Uranus', orbitRadius: 3800, radius: 10, color: '#38bdf8', angle: 3.1, speed: 0.00005, tilt: 97.77 * Math.PI / 180 },
-  { name: 'Neptune', orbitRadius: 6000, radius: 10, color: '#1d4ed8', angle: 1.8, speed: 0.00003, tilt: 28.32 * Math.PI / 180 },
-  { name: 'Pluto', orbitRadius: 7800, radius: 1.5, color: '#e5e7eb', angle: 2.2, speed: 0.00001, tilt: 122.53 * Math.PI / 180 },
+  { name: 'Mercury', orbitRadius: 77, radius: 2.4, color: '#a8a29e', angle: 1.2, speed: 0.004, tilt: 0.034 * Math.PI / 180, orbitColor: '#888888' },
+  { name: 'Venus', orbitRadius: 144, radius: 6, color: '#fcd34d', angle: 2.5, speed: 0.0015, tilt: 177.36 * Math.PI / 180, orbitColor: '#fef08a' },
+  { name: 'Mars', orbitRadius: 300, radius: 3.3, color: '#b91c1c', angle: 4.1, speed: 0.0008, tilt: 25.19 * Math.PI / 180, orbitColor: '#ef4444' },
+  { name: 'Jupiter', orbitRadius: 1040, radius: 15, color: '#d97706', angle: 0.5, speed: 0.0002, tilt: 3.13 * Math.PI / 180, orbitColor: '#f97316' },
+  { name: 'Saturn', orbitRadius: 1900, radius: 12, color: '#fde047', angle: 5.2, speed: 0.0001, tilt: 26.73 * Math.PI / 180, orbitColor: '#fde047' },
+  { name: 'Uranus', orbitRadius: 3800, radius: 10, color: '#38bdf8', angle: 3.1, speed: 0.00005, tilt: 97.77 * Math.PI / 180, orbitColor: '#7dd3fc' },
+  { name: 'Neptune', orbitRadius: 6000, radius: 10, color: '#1d4ed8', angle: 1.8, speed: 0.00003, tilt: 28.32 * Math.PI / 180, orbitColor: '#3b82f6' },
+  { name: 'Pluto', orbitRadius: 7800, radius: 1.5, color: '#e5e7eb', angle: 2.2, speed: 0.00001, tilt: 122.53 * Math.PI / 180, orbitColor: '#d1d5db' },
 ];
+
+const SAT_GROUP_COLORS: Record<string, string> = {
+  'Space Stations': '#38bdf8', // Light blue
+  'Earth Observation': '#4ade80', // Green
+  'Communications': '#facc15', // Yellow
+  'Telescopes': '#c084fc', // Purple
+  'Debris': '#f87171', // Red
+  'Others': '#94a3b8' // Slate
+};
+
+function getSatGroup(name: string, type: string) {
+  const upper = name.toUpperCase();
+  if (type === 'DEBRIS' || upper.includes('DEB ') || upper.includes('ROCKET') || upper.includes('OBJ')) return 'Debris';
+  if (upper.includes('ISS ') || upper.includes('ZARYA') || upper.includes('TIANGONG')) return 'Space Stations';
+  if (upper.includes('NOAA') || upper.includes('GOES') || upper.includes('SMAP') || upper.includes('METEOR') || upper.includes('LANDSAT') || upper.includes('AQUA') || upper.includes('TERRA') || upper.includes('SUOMI')) return 'Earth Observation';
+  if (upper.includes('STARLINK') || upper.includes('ONEWEB') || upper.includes('IRIDIUM') || upper.includes('NAVSTAR') || upper.includes('GALILEO') || upper.includes('GLONASS')) return 'Communications';
+  if (upper.includes('HUBBLE') || upper.includes('HST ') || upper.includes('CHANDRA')) return 'Telescopes';
+  return 'Others';
+}
 
 
 
@@ -46,6 +65,7 @@ function Earth({ activeLayer, epicTextureUrl, onDoubleClick }: { activeLayer: st
   if (activeLayer === 'Soil Moisture') earthColor = '#44aa44';
 
   const [epicTexture, setEpicTexture] = useState<THREE.Texture | null>(null);
+  const [gibsTexture, setGibsTexture] = useState<THREE.Texture | null>(null);
 
   useEffect(() => {
     if (epicTextureUrl) {
@@ -56,26 +76,53 @@ function Earth({ activeLayer, epicTextureUrl, onDoubleClick }: { activeLayer: st
     }
   }, [epicTextureUrl]);
 
+  useEffect(() => {
+    if (activeLayer === 'Satellites Now' || activeLayer === 'Visible Earth') {
+      setGibsTexture(null);
+      return;
+    }
+
+    const GIBS_LAYERS: Record<string, string> = {
+      'Visible Earth': '',
+      'Air Temperature': 'MERRA2_2m_Air_Temperature_Monthly',
+      'Carbon Dioxide': 'OCO-2_Carbon_Dioxide_Total_Column_Average',
+      'Carbon Monoxide': 'AIRS_L2_Carbon_Monoxide_500hPa_Volume_Mixing_Ratio_Day',
+      'Chlorophyll': 'MODIS_Aqua_L2_Chlorophyll_A',
+      'Sea Level': 'TOPEX-Poseidon_JASON_Sea_Surface_Height_Anomalies_GDR_Cycles',
+      'Sea Surface Temperature': 'GHRSST_L4_MUR_Sea_Surface_Temperature',
+      'Soil Moisture': 'SMAP_L4_Analyzed_Root_Zone_Soil_Moisture'
+    };
+
+    const layerName = GIBS_LAYERS[activeLayer];
+    if (layerName) {
+      const url = `https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&REQUEST=GetMap&LAYERS=${layerName}&VERSION=1.3.0&FORMAT=image/png&TRANSPARENT=true&WIDTH=1024&HEIGHT=512&CRS=EPSG:4326&BBOX=-90,-180,90,180&TIME=2022-01-01`;
+      new THREE.TextureLoader().load(url, (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        setGibsTexture(tex);
+      });
+    }
+  }, [activeLayer]);
+
   return (
-    <group onDoubleClick={onDoubleClick}>
-      {activeLayer === 'Satellites Now' ? (
-        <group ref={earthRef as any}>
-          <CustomPlanetModel name="earth" radius={EARTH_RADIUS_KM * SCALE} />
-        </group>
-      ) : (
-        <mesh ref={earthRef as any}>
-          <sphereGeometry args={[EARTH_RADIUS_KM * SCALE, 64, 64]} />
+    <group onDoubleClick={onDoubleClick} ref={earthRef as any}>
+      <CustomPlanetModel name="earth" radius={EARTH_RADIUS_KM * SCALE} />
+      
+      {/* Atmosphere / Data Layer Overlay */}
+      {activeLayer !== 'Satellites Now' ? (
+        <mesh>
+          <sphereGeometry args={[EARTH_RADIUS_KM * SCALE * 1.01, 64, 64]} />
           <meshStandardMaterial 
-            map={activeLayer === 'Visible Earth' && epicTexture ? epicTexture : undefined}
-            color={activeLayer === 'Visible Earth' ? '#ffffff' : earthColor} 
-            roughness={0.7} 
-            metalness={0.1} 
+            map={activeLayer === 'Visible Earth' ? epicTexture || undefined : gibsTexture || undefined}
+            color={activeLayer === 'Visible Earth' ? '#ffffff' : (gibsTexture ? '#ffffff' : earthColor)}
+            transparent 
+            opacity={activeLayer === 'Visible Earth' ? (epicTexture ? 1.0 : 0.0) : (gibsTexture ? 0.8 : 0.4)}
+            roughness={0.7}
           />
-          {/* Atmosphere */}
-          <mesh>
-            <sphereGeometry args={[EARTH_RADIUS_KM * SCALE * 1.03, 32, 32]} />
-            <meshBasicMaterial color="#22d3ee" transparent opacity={0.1} side={THREE.BackSide} />
-          </mesh>
+        </mesh>
+      ) : (
+        <mesh>
+          <sphereGeometry args={[EARTH_RADIUS_KM * SCALE * 1.03, 32, 32]} />
+          <meshBasicMaterial color="#22d3ee" transparent opacity={0.1} side={THREE.BackSide} />
         </mesh>
       )}
     </group>
@@ -267,14 +314,13 @@ function CelestialBodies({ onDoubleClick, selectedPlanet, setSelectedPlanet, tim
 
   return (
     <>
-      <mesh position={sunPos} onDoubleClick={onDoubleClick}>
-        <sphereGeometry args={[15, 64, 64]} />
-        <meshBasicMaterial color="#ffcc00" />
+      <group position={sunPos} onDoubleClick={onDoubleClick}>
+        <CustomPlanetModel name="sun" radius={15} />
         <pointLight intensity={3} distance={10000} color="#ffeedd" />
         <Html position={[0, 20, 0]} center style={{ pointerEvents: 'none' }}>
           <div className="text-yellow-400/80 font-black text-2xl uppercase tracking-[0.5em]">SUN</div>
         </Html>
-      </mesh>
+      </group>
 
       <Line points={earthOrbitPoints} color={selectedPlanet === 'Earth' ? '#38bdf8' : '#38bdf8'} opacity={selectedPlanet === 'Earth' ? 0.8 : 0.4} lineWidth={selectedPlanet === 'Earth' ? 3 : 1} transparent />
 
@@ -347,7 +393,7 @@ function FlyingModel({ satrec, name, timeOffset, showOrbit }: { satrec: satellit
   );
 }
 
-function GenericInstancedMesh({ tles, timeOffset, isDebris }: { tles: {satrec: satellite.SatRec}[], timeOffset: number, isDebris: boolean }) {
+function GenericInstancedMesh({ tles, timeOffset, isDebris, color }: { tles: {satrec: satellite.SatRec}[], timeOffset: number, isDebris: boolean, color: string }) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const currentIdx = useRef(0);
@@ -385,7 +431,6 @@ function GenericInstancedMesh({ tles, timeOffset, isDebris }: { tles: {satrec: s
             dummy.lookAt(target);
           }
           
-          // Extracted GLB geometries lack parent node scale down, so we forcefully scale them down
           const s = isDebris ? 0.02 : 0.002;
           dummy.scale.set(s, s, s);
           dummy.updateMatrix();
@@ -412,22 +457,31 @@ function GenericInstancedMesh({ tles, timeOffset, isDebris }: { tles: {satrec: s
       ) : (
          <boxGeometry args={[1, 1, 2]} />
       )}
-      <meshStandardMaterial color={isDebris ? "#ef4444" : "#e5e7eb"} roughness={0.4} metalness={0.6} emissive={isDebris ? "#ef4444" : "#06b6d4"} emissiveIntensity={isDebris ? 0.5 : 0.2} />
+      <meshStandardMaterial color={color} roughness={0.4} metalness={0.6} emissive={color} emissiveIntensity={0.2} />
     </instancedMesh>
   );
 }
 
-function GlobalConstellation({ tles, timeOffset, showOrbitPaths }: { tles: {satrec: satellite.SatRec, type: string, id: string, name: string}[], timeOffset: number, showOrbitPaths: boolean }) {
-  // Render max 150 complex models to save FPS. Use generic cubesats for the rest.
-  const allPayloads = useMemo(() => tles.filter(t => t.type !== 'DEBRIS'), [tles]);
-  const specificModels = useMemo(() => allPayloads.slice(0, 150), [allPayloads]);
-  const genericPayloads = useMemo(() => allPayloads.slice(150), [allPayloads]);
-  const debris = useMemo(() => tles.filter(t => t.type === 'DEBRIS'), [tles]);
+function GlobalConstellation({ tles, timeOffset, showOrbitPaths, visibleGroups }: { tles: {satrec: satellite.SatRec, type: string, id: string, name: string}[], timeOffset: number, showOrbitPaths: boolean, visibleGroups: Record<string, boolean> }) {
+  const visibleTles = useMemo(() => tles.filter(t => visibleGroups[getSatGroup(t.name, t.type)]), [tles, visibleGroups]);
+  const specificModels = useMemo(() => visibleTles.slice(0, 150), [visibleTles]);
+  const genericPayloads = useMemo(() => visibleTles.slice(150), [visibleTles]);
+
+  const groupedPayloads = useMemo(() => {
+     const groups: Record<string, any[]> = {};
+     genericPayloads.forEach((t: any) => {
+        const g = getSatGroup(t.name, t.type);
+        if (!groups[g]) groups[g] = [];
+        groups[g].push(t);
+     });
+     return groups;
+  }, [genericPayloads]);
 
   return (
     <group>
-      <GenericInstancedMesh tles={genericPayloads} timeOffset={timeOffset} isDebris={false} />
-      <GenericInstancedMesh tles={debris} timeOffset={timeOffset} isDebris={true} />
+      {Object.entries(groupedPayloads).map(([g, items]) => (
+         <GenericInstancedMesh key={g} tles={items} timeOffset={timeOffset} isDebris={g === 'Debris'} color={SAT_GROUP_COLORS[g]} />
+      ))}
       
       {specificModels.map(t => (
          <FlyingModel key={t.id} satrec={t.satrec} name={t.name} timeOffset={timeOffset} showOrbit={showOrbitPaths} />
@@ -436,7 +490,7 @@ function GlobalConstellation({ tles, timeOffset, showOrbitPaths }: { tles: {satr
   );
 }
 
-function OrbitPath({ satrec, isDebris }: { satrec: satellite.SatRec, isDebris: boolean }) {
+function OrbitPath({ satrec, color }: { satrec: satellite.SatRec, color: string }) {
   const points = [];
   const now = new Date();
   for (let i = 0; i < 120; i++) {
@@ -449,7 +503,7 @@ function OrbitPath({ satrec, isDebris }: { satrec: satellite.SatRec, isDebris: b
   if (points.length === 0) return null;
 
   return (
-    <Line points={points} color={isDebris ? '#ef4444' : '#22d3ee'} lineWidth={2} dashed dashSize={0.5} gapSize={0.2} opacity={0.8} transparent />
+    <Line points={points} color={color} lineWidth={1.5} dashed dashSize={0.5} gapSize={0.2} opacity={0.5} transparent />
   );
 }
 
@@ -499,7 +553,7 @@ function CameraController({ isRideMode, targetSatrec, timeOffset, controlsRef, m
   const { camera } = useThree();
   
   useEffect(() => {
-    const light = new THREE.PointLight(0xffffff, 1.5, 100);
+    const light = new THREE.PointLight(0xffffff, 5.0, 150); // Increased torchlight intensity
     camera.add(light);
     return () => { camera.remove(light); };
   }, [camera]);
@@ -509,6 +563,11 @@ function CameraController({ isRideMode, targetSatrec, timeOffset, controlsRef, m
     
     if (manualTarget) {
       controlsRef.current.target.lerp(manualTarget, 0.05);
+      const dist = state.camera.position.distanceTo(manualTarget);
+      if (dist > 20) {
+        const desiredPos = manualTarget.clone().add(new THREE.Vector3(1, 0.2, 1).normalize().multiplyScalar(15));
+        state.camera.position.lerp(desiredPos, 0.05);
+      }
     } else if (isRideMode && targetSatrec) {
       const d = new Date(Date.now() + timeOffset * 60000);
       const pv = satellite.propagate(targetSatrec, d);
@@ -521,8 +580,24 @@ function CameraController({ isRideMode, targetSatrec, timeOffset, controlsRef, m
         const dist = state.camera.position.distanceTo(satPos);
         if (dist > 3) {
           const desiredPos = satPos.clone().add(new THREE.Vector3(1, 1, 1).normalize().multiplyScalar(2));
-          state.camera.position.lerp(desiredPos, 0.02);
+          state.camera.position.lerp(desiredPos, 0.05);
         }
+      }
+    } else if (selectedPlanet === 'Sun') {
+      const target = new THREE.Vector3(-200, 0, 0);
+      controlsRef.current.target.lerp(target, 0.05);
+      const dist = state.camera.position.distanceTo(target);
+      if (dist > 40) {
+        const desiredPos = target.clone().add(new THREE.Vector3(1, 0.2, 1).normalize().multiplyScalar(30));
+        state.camera.position.lerp(desiredPos, 0.05);
+      }
+    } else if (selectedPlanet === 'Moon') {
+      const target = new THREE.Vector3(30, 0, 0);
+      controlsRef.current.target.lerp(target, 0.05);
+      const dist = state.camera.position.distanceTo(target);
+      if (dist > 5) {
+        const desiredPos = target.clone().add(new THREE.Vector3(1, 0.2, 1).normalize().multiplyScalar(4));
+        state.camera.position.lerp(desiredPos, 0.05);
       }
     } else if (selectedPlanet && selectedPlanet !== 'Earth') {
       const p = PLANET_DATA.find(x => x.name === selectedPlanet);
@@ -538,7 +613,7 @@ function CameraController({ isRideMode, targetSatrec, timeOffset, controlsRef, m
          const dist = state.camera.position.distanceTo(target);
          if (dist > p.radius * 4) {
            const desiredPos = target.clone().add(new THREE.Vector3(1, 0.5, 1).normalize().multiplyScalar(p.radius * 3));
-           state.camera.position.lerp(desiredPos, 0.02);
+           state.camera.position.lerp(desiredPos, 0.05);
          }
       }
     } else {
@@ -548,12 +623,15 @@ function CameraController({ isRideMode, targetSatrec, timeOffset, controlsRef, m
       if (selectedPlanet === 'Earth') {
          const dist = state.camera.position.distanceTo(target);
          const earthRadius = EARTH_RADIUS_KM * SCALE;
-         if (dist > earthRadius * 5) {
-           const desiredPos = target.clone().add(new THREE.Vector3(1, 0.5, 1).normalize().multiplyScalar(earthRadius * 4));
-           state.camera.position.lerp(desiredPos, 0.02);
+         if (dist > earthRadius * 2) {
+           const desiredPos = target.clone().add(new THREE.Vector3(1, 0.2, 1).normalize().multiplyScalar(earthRadius * 1.5));
+           state.camera.position.lerp(desiredPos, 0.05);
          }
       }
     }
+    
+    // Crucial: Update orbit controls explicitly if we manually moved the camera position
+    controlsRef.current.update();
 
     // Prevent camera from clipping inside the Earth
     const minDistance = (EARTH_RADIUS_KM * SCALE) + 0.2;
@@ -580,13 +658,27 @@ export default function SolarSystemViewer() {
   const [selectedPlanet, setSelectedPlanet] = useState<string | null>(null);
   const [activeLayer, setActiveLayer] = useState('Satellites Now');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [satPanelOpen, setSatPanelOpen] = useState(true);
+  const [visibleGroups, setVisibleGroups] = useState<Record<string, boolean>>({
+    'Space Stations': true,
+    'Earth Observation': true,
+    'Communications': true,
+    'Telescopes': true,
+    'Debris': true,
+    'Others': true
+  });
   const [mounted, setMounted] = useState(false);
   const [manualTarget, setManualTarget] = useState<THREE.Vector3 | null>(null);
   const [epicTextureUrl, setEpicTextureUrl] = useState<string | null>(null);
   const [showPlanetsMenu, setShowPlanetsMenu] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const controlsRef = useRef<any>(null);
 
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (tles.length > 0) setInitialLoading(false);
+  }, [tles]);
 
   useEffect(() => {
     if (activeLayer === 'Visible Earth' && !epicTextureUrl) {
@@ -671,6 +763,62 @@ export default function SolarSystemViewer() {
 
   return (
     <div className="w-full h-screen bg-black overflow-hidden relative">
+      {initialLoading && (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black">
+          <div className="text-4xl font-black text-white tracking-[0.5em] animate-pulse">INITIATING</div>
+          <div className="text-[var(--theme-400)] font-mono text-xs tracking-widest mt-4">Connecting to Orbital Data Network...</div>
+        </div>
+      )}
+      
+      {/* Satellite Groups Panel (Top Right) */}
+      <div className="absolute top-6 right-6 z-20 pointer-events-none flex items-start gap-4">
+        {satPanelOpen && (
+          <div className="glass-panel border border-[var(--theme-500)]/30 bg-[#05050a]/90 backdrop-blur-md rounded-xl p-4 w-72 shadow-[0_0_20px_rgba(var(--theme-rgb),0.3)] pointer-events-auto transition-all">
+            <h2 className="text-[var(--theme-400)] font-mono tracking-widest uppercase text-xs mb-4 border-b border-white/10 pb-2">Satellite Categories</h2>
+            
+            <div className="space-y-2 mb-4">
+               {Object.keys(SAT_GROUP_COLORS).map(g => (
+                 <div key={g} className="flex items-center justify-between text-xs font-mono">
+                    <div className="flex items-center space-x-2">
+                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: SAT_GROUP_COLORS[g] }} />
+                       <span className={visibleGroups[g] ? 'text-white' : 'text-white/30 transition-colors'}>{g}</span>
+                    </div>
+                    <button 
+                      onClick={() => setVisibleGroups(prev => ({...prev, [g]: !prev[g]}))}
+                      className={`px-2 py-1 rounded transition-colors ${visibleGroups[g] ? 'bg-[var(--theme-500)]/20 text-white hover:bg-[var(--theme-500)]/40' : 'bg-white/5 text-white/30 hover:bg-white/10'}`}
+                    >
+                       {visibleGroups[g] ? 'SHOW' : 'HIDE'}
+                    </button>
+                 </div>
+               ))}
+            </div>
+            
+            <div className="flex space-x-2 pt-2 border-t border-white/10">
+               <button 
+                 onClick={() => {
+                   const allOn = Object.keys(visibleGroups).reduce((acc, key) => ({...acc, [key]: true}), {});
+                   setVisibleGroups(allOn);
+                 }}
+                 className="flex-1 px-2 py-1.5 text-[10px] font-mono tracking-widest uppercase rounded border border-white/20 hover:bg-white/10 transition-colors"
+               >
+                 Show All
+               </button>
+               <button 
+                 onClick={() => {
+                   const allOff = Object.keys(visibleGroups).reduce((acc, key) => ({...acc, [key]: false}), {});
+                   setVisibleGroups(allOff);
+                 }}
+                 className="flex-1 px-2 py-1.5 text-[10px] font-mono tracking-widest uppercase rounded border border-white/20 hover:bg-white/10 transition-colors"
+               >
+                 Hide All
+               </button>
+            </div>
+          </div>
+        )}
+        <button onClick={() => setSatPanelOpen(!satPanelOpen)} className="mt-2 text-[var(--theme-400)] hover:text-white transition-colors bg-black/50 p-2 pointer-events-auto rounded-full border border-[var(--theme-500)]/30 backdrop-blur-md shadow-[0_0_15px_rgba(var(--theme-rgb),0.2)]">
+           <ChevronLeft size={20} className={`transform transition-transform ${satPanelOpen ? 'rotate-180' : ''}`} />
+        </button>
+      </div>
       <div className="absolute top-0 left-0 w-full p-6 z-10 flex justify-between items-start pointer-events-none">
         <div>
           <Link href="/radar" className="inline-flex items-center space-x-2 text-[var(--theme-400)] hover:text-white transition-colors bg-black/50 px-4 py-2 rounded-full border border-[var(--theme-500)]/30 backdrop-blur-md pointer-events-auto shadow-[0_0_15px_rgba(var(--theme-rgb),0.2)]">
@@ -681,41 +829,29 @@ export default function SolarSystemViewer() {
             <button onClick={() => setSidebarOpen(!sidebarOpen)} className="mt-2 text-cyan-400 hover:text-white transition-colors">
                <ChevronLeft size={24} className={`transform transition-transform ${sidebarOpen ? '' : 'rotate-180'}`} />
             </button>
-            <div>
-              <h1 className="text-3xl md:text-5xl font-black text-white tracking-[0.2em] uppercase drop-shadow-md">
-                {satName}
-              </h1>
-              <p className="text-[var(--theme-400)] font-mono tracking-widest uppercase text-xs mt-1">
-                Live 3D Orbital Tracking Matrix
-              </p>
-            </div>
+            {sidebarOpen && (
+              <div>
+                <h1 className="text-xl md:text-2xl font-black text-white tracking-[0.2em] uppercase drop-shadow-md">
+                  {satName}
+                </h1>
+                <p className="text-[var(--theme-400)] font-mono tracking-widest uppercase text-xs mt-1">
+                  Live 3D Orbital Tracking Matrix
+                </p>
+              </div>
+            )}
           </div>
           
-          <button 
-             onClick={() => {
-               setTargetSatrec(null);
-               setSatName('GLOBAL CONSTELLATION');
-               setIsRideMode(false);
-               setSelectedPlanet(null);
-               setManualTarget(new THREE.Vector3(0, 0, 0));
-             }} 
-             className="pointer-events-auto mt-4 ml-14 flex items-center space-x-2 px-4 py-2 rounded border border-[var(--theme-500)]/50 bg-black/50 text-[var(--theme-400)] hover:bg-[var(--theme-500)]/20 transition-all font-mono tracking-widest text-xs uppercase"
-          >
-             <Globe size={16} />
-             <span>Back to Earth</span>
-          </button>
           
           {/* NASA Eyes Sidebar: Featured Targets */}
           {sidebarOpen && (
             <div className="mt-8 ml-2 pointer-events-auto w-80">
              <div className="text-[10px] text-white/50 uppercase tracking-widest font-mono mb-3">Featured Stories and Events</div>
              <div className="flex flex-col space-y-3 h-[calc(100vh-200px)] overflow-y-auto scrollbar-hide pr-4 pb-20 pointer-events-auto">
-                {/* 4 New Static Featured Stories */}
                 {[
-                  { name: 'Psyche Mars Gravity Assist', date: 'MARS FLYBY ON MAY 15TH, 2026', img: 'planet' },
-                  { name: 'Artemis II Launch', date: 'MISSION LAUNCH APRIL 1ST, 2026', img: 'rocket' },
-                  { name: 'Comet 31/ATLAS Jupiter Flyby', date: 'MARCH 15TH, 2026', img: 'comet' },
-                  { name: 'Voyager\'s Grand Tour', date: '1977 - TODAY', img: 'voyager' }
+                  { name: 'Psyche Mars Gravity Assist', date: 'MARS FLYBY ON MAY 15TH, 2026', img: 'https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?w=200&q=80' },
+                  { name: 'Artemis II Launch', date: 'MISSION LAUNCH APRIL 1ST, 2026', img: 'https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?w=200&q=80' },
+                  { name: 'Comet 31/ATLAS Jupiter Flyby', date: 'MARCH 15TH, 2026', img: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=200&q=80' },
+                  { name: 'Voyager\'s Grand Tour', date: '1977 - TODAY', img: 'https://images.unsplash.com/photo-1614729939124-032f0b56c9ce?w=200&q=80' }
                 ].map((story, idx) => (
                    <button
                      key={`story-${idx}`}
@@ -728,18 +864,15 @@ export default function SolarSystemViewer() {
                      }}
                      className="glass-panel rounded-xl flex-shrink-0 overflow-hidden border border-[var(--theme-500)]/30 hover:border-[var(--theme-500)]/70 hover:bg-[var(--theme-500)]/20 text-left transition-all group relative bg-[#111115]"
                    >
-                     <div className="p-4">
-                       <h3 className="text-white font-bold text-lg leading-tight w-3/4">{story.name}</h3>
-                       <div className="text-[10px] text-[#fcd34d] font-mono uppercase tracking-widest mt-2">
+                     <div className="p-4 z-10 relative">
+                       <h3 className="text-white font-bold text-lg leading-tight w-3/4 drop-shadow-md">{story.name}</h3>
+                       <div className="text-[10px] text-[#fcd34d] font-mono uppercase tracking-widest mt-2 drop-shadow-md">
                          {story.date}
                        </div>
                      </div>
-                     <div className="absolute top-0 right-0 h-full w-1/3 opacity-30 group-hover:opacity-60 transition-opacity flex items-center justify-center">
-                       <svg className="w-16 h-16 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-                          <circle cx="12" cy="12" r="10" />
-                          <line x1="12" y1="8" x2="12" y2="16" />
-                          <line x1="8" y1="12" x2="16" y2="12" />
-                       </svg>
+                     <div className="absolute top-0 right-0 h-full w-1/2 opacity-50 group-hover:opacity-80 transition-opacity">
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#111115] to-transparent z-10"></div>
+                        <img src={story.img} className="w-full h-full object-cover" alt="" />
                      </div>
                    </button>
                 ))}
@@ -765,13 +898,9 @@ export default function SolarSystemViewer() {
                        </div>
                      </div>
                      
-                     {/* Thumbnail Placeholder graphic on the right side of the card */}
-                     <div className="absolute top-0 right-0 h-full w-1/3 opacity-30 group-hover:opacity-60 transition-opacity flex items-center justify-center">
-                       <svg className="w-16 h-16 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-                          <circle cx="12" cy="12" r="10" />
-                          <line x1="2" y1="12" x2="22" y2="12" />
-                          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                       </svg>
+                     <div className="absolute top-0 right-0 h-full w-1/2 opacity-50 group-hover:opacity-80 transition-opacity">
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#111115] to-transparent z-10"></div>
+                        <img src="https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=200&q=80" className="w-full h-full object-cover grayscale hover:grayscale-0" alt="" />
                      </div>
                    </button>
                 ))}
@@ -870,22 +999,14 @@ export default function SolarSystemViewer() {
         {showTorchlight && <Torchlight />}
         <directionalLight position={[50, 20, 10]} intensity={1.5} />
         
-        <Stars radius={150} depth={50} count={3000} factor={4} saturation={0} fade speed={1} />
+        <Stars radius={300} depth={200} count={1000} factor={6} saturation={0} fade speed={1} />
         
-        <OrbitControls 
-          ref={controlsRef} 
-          enablePan={false} 
-          enableDamping 
-          dampingFactor={0.05} 
-          minDistance={EARTH_RADIUS_KM * SCALE + 0.5} 
-          maxDistance={20000} 
-        />
         {/* Massive background sphere to catch raycasting for empty space navigation */}
         <mesh visible={false} onDoubleClick={(e) => { 
           e.stopPropagation(); 
-          // Extract point and normalize to prevent massive jumps into the void, 
-          // lerping a percentage of the way instead of infinitely far
-          const safePoint = e.point.clone().normalize().multiplyScalar(50);
+          // Move target 100 units forward from the camera's CURRENT position in the direction clicked
+          const dir = e.point.clone().sub(e.camera.position).normalize();
+          const safePoint = e.camera.position.clone().add(dir.multiplyScalar(100));
           setManualTarget(safePoint); 
           setIsRideMode(false); 
           setSelectedPlanet(null); 
@@ -897,17 +1018,17 @@ export default function SolarSystemViewer() {
         <Earth activeLayer={activeLayer} epicTextureUrl={epicTextureUrl} onDoubleClick={(e) => { e.stopPropagation(); setManualTarget(e.point); setIsRideMode(false); setSelectedPlanet('Earth'); }} />
         <CelestialBodies onDoubleClick={(e) => { e.stopPropagation(); setManualTarget(e.point); setIsRideMode(false); }} selectedPlanet={selectedPlanet} setSelectedPlanet={setSelectedPlanet} timeOffset={localTimeOffset} />
         
-        {activeLayer === 'Satellites Now' && <GlobalConstellation tles={tles} timeOffset={localTimeOffset} showOrbitPaths={showOrbitPaths} />}
+        {activeLayer === 'Satellites Now' && <GlobalConstellation tles={tles} timeOffset={localTimeOffset} showOrbitPaths={showOrbitPaths} visibleGroups={visibleGroups} />}
         
-        {activeLayer === 'Satellites Now' && showOrbitPaths && tles.filter(t => t.name.includes('ISS') || t.name.includes('SMAP') || t.name.includes('HUBBLE')).map(t => (
-          <OrbitPath key={t.id} satrec={t.satrec} isDebris={t.type === 'DEBRIS'} />
+        {activeLayer === 'Satellites Now' && showOrbitPaths && tles.filter(t => visibleGroups[getSatGroup(t.name, t.type)]).slice(0, 100).map(t => (
+          <OrbitPath key={t.id} satrec={t.satrec} color={SAT_GROUP_COLORS[getSatGroup(t.name, t.type)]} />
         ))}
         
         {targetSatrec && activeLayer === 'Satellites Now' && (
           <TargetSatellite satrec={targetSatrec} timeOffset={localTimeOffset} isRideMode={isRideMode} velocity={setCurrentSpeed} name={satName} onDoubleClick={(e) => { e.stopPropagation(); setManualTarget(e.point.clone().normalize().multiplyScalar(50)); setIsRideMode(false); }} />
         )}
         <CameraController isRideMode={isRideMode} targetSatrec={targetSatrec} timeOffset={localTimeOffset} controlsRef={controlsRef} manualTarget={manualTarget} selectedPlanet={selectedPlanet} />
-        <OrbitControls ref={controlsRef} enablePan={true} enableZoom={true} minDistance={0.5} maxDistance={200} rotateSpeed={0.4} zoomSpeed={0.4} panSpeed={0.4} />
+        <OrbitControls ref={controlsRef} enablePan={true} enableZoom={true} enableDamping dampingFactor={0.05} minDistance={0.5} maxDistance={20000} rotateSpeed={0.4} zoomSpeed={0.4} panSpeed={0.4} />
         
       </Canvas>
 
@@ -919,6 +1040,20 @@ export default function SolarSystemViewer() {
              <div className="absolute bottom-full right-0 mb-4 w-48 glass-panel border border-[var(--theme-500)]/30 rounded-xl overflow-hidden bg-black/80 backdrop-blur-md shadow-[0_0_20px_rgba(var(--theme-rgb),0.3)] transform origin-bottom animate-in fade-in slide-in-from-bottom-4 duration-200">
                <div className="text-[10px] uppercase font-mono tracking-widest text-[var(--theme-400)] border-b border-white/10 px-4 py-2 bg-white/5">Select Target</div>
                <div className="flex flex-col max-h-60 overflow-y-auto scrollbar-hide">
+                 <button 
+                   onClick={() => { setSelectedPlanet('Sun'); setShowPlanetsMenu(false); setManualTarget(new THREE.Vector3(-200,0,0)); setIsRideMode(false); }}
+                   className="text-left px-4 py-2 text-xs font-mono tracking-widest hover:bg-[var(--theme-500)]/20 hover:text-white transition-colors border-b border-white/5 flex items-center space-x-2"
+                 >
+                   <div className="w-2 h-2 rounded-full bg-[#fcd34d]" />
+                   <span>SUN</span>
+                 </button>
+                 <button 
+                   onClick={() => { setSelectedPlanet('Moon'); setShowPlanetsMenu(false); setManualTarget(new THREE.Vector3(30,0,0)); setIsRideMode(false); }}
+                   className="text-left px-4 py-2 text-xs font-mono tracking-widest hover:bg-[var(--theme-500)]/20 hover:text-white transition-colors border-b border-white/5 flex items-center space-x-2"
+                 >
+                   <div className="w-2 h-2 rounded-full bg-[#cbd5e1]" />
+                   <span>MOON</span>
+                 </button>
                  <button 
                    onClick={() => { setSelectedPlanet('Earth'); setShowPlanetsMenu(false); setManualTarget(new THREE.Vector3(0,0,0)); setIsRideMode(false); }}
                    className="text-left px-4 py-2 text-xs font-mono tracking-widest hover:bg-[var(--theme-500)]/20 hover:text-white transition-colors border-b border-white/5 flex items-center space-x-2"
@@ -947,6 +1082,20 @@ export default function SolarSystemViewer() {
              <span>Planets</span>
            </button>
          </div>
+
+         <button 
+           onClick={() => {
+             setTargetSatrec(null);
+             setSatName('GLOBAL CONSTELLATION');
+             setIsRideMode(false);
+             setSelectedPlanet(null);
+             setManualTarget(new THREE.Vector3(0, 0, 0));
+           }} 
+           className="w-full px-4 py-2 rounded-full font-mono text-xs uppercase tracking-widest border border-[var(--theme-500)]/50 bg-black/50 text-[var(--theme-400)] hover:bg-[var(--theme-500)]/20 transition-all flex items-center space-x-2 justify-center shadow-[0_0_10px_rgba(var(--theme-rgb),0.3)]"
+         >
+           <Globe size={14} />
+           <span>Back to Earth</span>
+         </button>
 
          <button 
            onClick={() => setShowOrbitPaths(!showOrbitPaths)}
