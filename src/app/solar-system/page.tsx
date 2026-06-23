@@ -6,7 +6,7 @@ import { OrbitControls, Stars, Line, Html, useTexture, useGLTF } from '@react-th
 import * as THREE from 'three';
 import * as satellite from 'satellite.js';
 import Link from 'next/link';
-import { ChevronLeft, Camera, Navigation, Zap, Globe } from 'lucide-react';
+import { ChevronLeft, Camera, Navigation, Zap, Globe, Info } from 'lucide-react';
 import { useRadarStore } from '@/store/useRadarStore';
 import { useSearchParams } from 'next/navigation';
 import { DynamicSatellite, getSatelliteModelInfo } from '@/components/3D/DynamicSatellite';
@@ -652,6 +652,7 @@ export default function SolarSystemViewer() {
   const [showTorchlight, setShowTorchlight] = useState(false);
   const [showOrbitPaths, setShowOrbitPaths] = useState(true);
   const [targetSatrec, setTargetSatrec] = useState<satellite.SatRec | null>(null);
+  const [targetSatrec, setTargetSatrec] = useState<any>(null);
   const [satName, setSatName] = useState('GLOBAL CONSTELLATION');
   const [isRideMode, setIsRideMode] = useState(false);
   const [currentSpeed, setCurrentSpeed] = useState(0);
@@ -659,6 +660,7 @@ export default function SolarSystemViewer() {
   const [activeLayer, setActiveLayer] = useState('Satellites Now');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [satPanelOpen, setSatPanelOpen] = useState(true);
+  const [infoPanelOpen, setInfoPanelOpen] = useState(true);
   const [visibleGroups, setVisibleGroups] = useState<Record<string, boolean>>({
     'Space Stations': true,
     'Earth Observation': true,
@@ -752,15 +754,6 @@ export default function SolarSystemViewer() {
       });
   }, [targetId]);
 
-  const displayDate = mounted ? new Date(Date.now() + localTimeOffset * 60000).toLocaleString() : '';
-  const formatOffset = (val: number) => {
-    const mins = Math.round(val);
-    if (mins === 0) return 'NOW';
-    const h = Math.floor(Math.abs(mins) / 60);
-    const m = Math.abs(mins) % 60;
-    return `${mins < 0 ? '-' : '+'}${h > 0 ? h + 'H ' : ''}${m}M`;
-  };
-
   return (
     <div className="w-full h-screen bg-black overflow-hidden relative">
       {initialLoading && (
@@ -771,53 +764,124 @@ export default function SolarSystemViewer() {
       )}
       
       {/* Satellite Groups Panel (Top Right) */}
-      <div className="absolute top-6 right-6 z-20 pointer-events-none flex items-start gap-4">
-        {satPanelOpen && (
-          <div className="glass-panel border border-[var(--theme-500)]/30 bg-[#05050a]/90 backdrop-blur-md rounded-xl p-4 w-72 shadow-[0_0_20px_rgba(var(--theme-rgb),0.3)] pointer-events-auto transition-all">
-            <h2 className="text-[var(--theme-400)] font-mono tracking-widest uppercase text-xs mb-4 border-b border-white/10 pb-2">Satellite Categories</h2>
-            
-            <div className="space-y-2 mb-4">
-               {Object.keys(SAT_GROUP_COLORS).map(g => (
-                 <div key={g} className="flex items-center justify-between text-xs font-mono">
-                    <div className="flex items-center space-x-2">
-                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: SAT_GROUP_COLORS[g] }} />
-                       <span className={visibleGroups[g] ? 'text-white' : 'text-white/30 transition-colors'}>{g}</span>
-                    </div>
-                    <button 
-                      onClick={() => setVisibleGroups(prev => ({...prev, [g]: !prev[g]}))}
-                      className={`px-2 py-1 rounded transition-colors ${visibleGroups[g] ? 'bg-[var(--theme-500)]/20 text-white hover:bg-[var(--theme-500)]/40' : 'bg-white/5 text-white/30 hover:bg-white/10'}`}
-                    >
-                       {visibleGroups[g] ? 'SHOW' : 'HIDE'}
-                    </button>
-                 </div>
-               ))}
+      <div className="absolute top-6 right-6 z-20 pointer-events-none flex flex-col items-end gap-4">
+        {/* Categories Panel Row */}
+        <div className="flex items-start gap-4">
+          {satPanelOpen && (
+            <div className="glass-panel border border-[var(--theme-500)]/30 bg-[#05050a]/90 backdrop-blur-md rounded-xl p-4 w-72 shadow-[0_0_20px_rgba(var(--theme-rgb),0.3)] pointer-events-auto transition-all">
+              <h2 className="text-[var(--theme-400)] font-mono tracking-widest uppercase text-xs mb-4 border-b border-white/10 pb-2">Satellite Categories</h2>
+              
+              <div className="space-y-2 mb-4">
+                 {Object.keys(SAT_GROUP_COLORS).map(g => (
+                   <div key={g} className="flex items-center justify-between text-xs font-mono">
+                      <div className="flex items-center space-x-2">
+                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: SAT_GROUP_COLORS[g] }} />
+                         <span className={visibleGroups[g] ? 'text-white' : 'text-white/30 transition-colors'}>{g}</span>
+                      </div>
+                      <button 
+                        onClick={() => setVisibleGroups(prev => ({...prev, [g]: !prev[g]}))}
+                        className={`px-2 py-1 rounded transition-colors ${visibleGroups[g] ? 'bg-[var(--theme-500)]/20 text-white hover:bg-[var(--theme-500)]/40' : 'bg-white/5 text-white/30 hover:bg-white/10'}`}
+                      >
+                         {visibleGroups[g] ? 'SHOW' : 'HIDE'}
+                      </button>
+                   </div>
+                 ))}
+              </div>
+              
+              <div className="flex space-x-2 pt-2 border-t border-white/10">
+                 <button 
+                   onClick={() => {
+                     const allOn = Object.keys(visibleGroups).reduce((acc, key) => ({...acc, [key]: true}), {});
+                     setVisibleGroups(allOn);
+                   }}
+                   className="flex-1 px-2 py-1.5 text-[10px] font-mono tracking-widest uppercase rounded border border-white/20 hover:bg-white/10 transition-colors"
+                 >
+                   Show All
+                 </button>
+                 <button 
+                   onClick={() => {
+                     const allOff = Object.keys(visibleGroups).reduce((acc, key) => ({...acc, [key]: false}), {});
+                     setVisibleGroups(allOff);
+                   }}
+                   className="flex-1 px-2 py-1.5 text-[10px] font-mono tracking-widest uppercase rounded border border-white/20 hover:bg-white/10 transition-colors"
+                 >
+                   Hide All
+                 </button>
+              </div>
             </div>
-            
-            <div className="flex space-x-2 pt-2 border-t border-white/10">
-               <button 
-                 onClick={() => {
-                   const allOn = Object.keys(visibleGroups).reduce((acc, key) => ({...acc, [key]: true}), {});
-                   setVisibleGroups(allOn);
-                 }}
-                 className="flex-1 px-2 py-1.5 text-[10px] font-mono tracking-widest uppercase rounded border border-white/20 hover:bg-white/10 transition-colors"
-               >
-                 Show All
-               </button>
-               <button 
-                 onClick={() => {
-                   const allOff = Object.keys(visibleGroups).reduce((acc, key) => ({...acc, [key]: false}), {});
-                   setVisibleGroups(allOff);
-                 }}
-                 className="flex-1 px-2 py-1.5 text-[10px] font-mono tracking-widest uppercase rounded border border-white/20 hover:bg-white/10 transition-colors"
-               >
-                 Hide All
-               </button>
+          )}
+          <button onClick={() => setSatPanelOpen(!satPanelOpen)} className="mt-2 text-[var(--theme-400)] hover:text-white transition-colors bg-black/50 p-2 pointer-events-auto rounded-full border border-[var(--theme-500)]/30 backdrop-blur-md shadow-[0_0_15px_rgba(var(--theme-rgb),0.2)]">
+             <ChevronLeft size={20} className={`transform transition-transform ${satPanelOpen ? 'rotate-180' : ''}`} />
+          </button>
+        </div>
+
+        {/* General / Target Info Panel */}
+        <div className="flex items-start gap-4">
+          {infoPanelOpen && (
+            <div className="glass-panel border border-[var(--theme-500)]/30 bg-[#05050a]/90 backdrop-blur-md rounded-xl p-4 w-72 shadow-[0_0_20px_rgba(var(--theme-rgb),0.3)] pointer-events-auto transition-all text-white">
+              {targetSatrec && satName !== 'GLOBAL CONSTELLATION' ? (
+                 <>
+                   <h2 className="text-[var(--theme-400)] font-mono tracking-widest uppercase text-xs mb-2 border-b border-white/10 pb-2">Target Telemetry</h2>
+                   <div className="font-bold text-lg leading-tight mb-2 uppercase tracking-wide truncate">{satName}</div>
+                   
+                   <div className="space-y-3 font-mono text-[10px] uppercase text-white/70">
+                     <div className="flex justify-between">
+                       <span className="text-white/40">Status</span>
+                       <span className="text-green-400 animate-pulse">Active Tracking</span>
+                     </div>
+                     <div className="flex justify-between">
+                       <span className="text-white/40">Class</span>
+                       <span className="text-[var(--theme-400)]">{getSatGroup(satName, targetSatrec.type || 'PAYLOAD')}</span>
+                     </div>
+                     <div className="flex justify-between">
+                       <span className="text-white/40">Velocity</span>
+                       <span>{currentSpeed ? (Math.round(currentSpeed * 10) / 10).toFixed(1) : '--'} km/s</span>
+                     </div>
+                     <div className="flex justify-between">
+                       <span className="text-white/40">Orbit Period</span>
+                       <span>{targetSatrec ? Math.round(1440 / targetSatrec.no) : '--'} mins</span>
+                     </div>
+                     <div className="flex justify-between">
+                       <span className="text-white/40">Inclination</span>
+                       <span>{targetSatrec ? (targetSatrec.inclo * 180 / Math.PI).toFixed(2) : '--'}°</span>
+                     </div>
+                   </div>
+                 </>
+              ) : (
+                 <>
+                   <h2 className="text-[var(--theme-400)] font-mono tracking-widest uppercase text-xs mb-2 border-b border-white/10 pb-2">Global Network</h2>
+                   <div className="font-bold text-lg leading-tight mb-2 uppercase tracking-wide truncate">Orbital Array</div>
+                   
+                   <div className="space-y-3 font-mono text-[10px] uppercase text-white/70">
+                     <div className="flex justify-between">
+                       <span className="text-white/40">Total Objects</span>
+                       <span className="text-cyan-400">{tles.length.toLocaleString()}</span>
+                     </div>
+                     <div className="flex justify-between">
+                       <span className="text-white/40">Active Payloads</span>
+                       <span className="text-[var(--theme-400)]">{tles.filter(t => t.type === 'PAYLOAD').length.toLocaleString()}</span>
+                     </div>
+                     <div className="flex justify-between">
+                       <span className="text-white/40">Tracked Debris</span>
+                       <span className="text-red-400">{tles.filter(t => t.type === 'DEBRIS').length.toLocaleString()}</span>
+                     </div>
+                     <div className="flex justify-between">
+                       <span className="text-white/40">Network Status</span>
+                       <span className="text-green-400 animate-pulse">ONLINE</span>
+                     </div>
+                     <div className="flex justify-between">
+                       <span className="text-white/40">Last Epoch</span>
+                       <span>{mounted ? new Date().toLocaleDateString() : '--'}</span>
+                     </div>
+                   </div>
+                 </>
+              )}
             </div>
-          </div>
-        )}
-        <button onClick={() => setSatPanelOpen(!satPanelOpen)} className="mt-2 text-[var(--theme-400)] hover:text-white transition-colors bg-black/50 p-2 pointer-events-auto rounded-full border border-[var(--theme-500)]/30 backdrop-blur-md shadow-[0_0_15px_rgba(var(--theme-rgb),0.2)]">
-           <ChevronLeft size={20} className={`transform transition-transform ${satPanelOpen ? 'rotate-180' : ''}`} />
-        </button>
+          )}
+          <button onClick={() => setInfoPanelOpen(!infoPanelOpen)} className="mt-2 text-[var(--theme-400)] hover:text-white transition-colors bg-black/50 p-2 pointer-events-auto rounded-full border border-[var(--theme-500)]/30 backdrop-blur-md shadow-[0_0_15px_rgba(var(--theme-rgb),0.2)]">
+             <ChevronLeft size={20} className={`transform transition-transform ${infoPanelOpen ? 'rotate-180' : ''}`} />
+          </button>
+        </div>
       </div>
       <div className="absolute top-0 left-0 w-full p-6 z-10 flex justify-between items-start pointer-events-none">
         <div>
@@ -928,8 +992,8 @@ export default function SolarSystemViewer() {
       <div className="absolute bottom-0 left-0 w-full p-4 z-20 flex justify-center pointer-events-none">
         <div className="flex flex-col items-center max-w-4xl w-full">
           {/* Top row of timeline text and buttons */}
-          <div className="flex justify-between items-center w-full text-white font-mono text-sm tracking-widest px-4 mb-2 pointer-events-auto">
-             <div className="flex items-center space-x-2 text-green-400">
+          <div className="relative flex justify-center items-center w-full text-white font-mono text-sm tracking-widest px-4 mb-2 pointer-events-auto">
+             <div className="absolute left-4 flex items-center space-x-2 text-green-400">
                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                <span>{timeOffset === 0 ? 'LIVE' : 'SIM'}</span>
              </div>
@@ -942,7 +1006,7 @@ export default function SolarSystemViewer() {
                <button onClick={() => setTimeOffset(Math.min(1440, timeOffset + 60))} className="hover:text-[var(--theme-400)] transition-colors">+1H</button>
              </div>
              
-             <div className="text-right">
+             <div className="absolute right-4 text-right">
                <div>{mounted ? new Date(Date.now() + timeOffset * 60000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase() : ''}</div>
                <div className="text-xs opacity-70">{mounted ? new Date(Date.now() + timeOffset * 60000).toLocaleTimeString('en-US') : ''}</div>
              </div>
@@ -977,15 +1041,25 @@ export default function SolarSystemViewer() {
           
           {/* Bottom Nav Bar matching NASA Eyes "Vital Signs" */}
           <div className="w-screen bg-[#05050a]/90 backdrop-blur-md border-t border-white/10 mt-6 -mx-4 -mb-4 px-8 py-3 flex items-center justify-center space-x-6 text-xs text-white/50 tracking-wide pointer-events-auto overflow-x-auto whitespace-nowrap scrollbar-hide">
-            {['Satellites Now', 'Visible Earth', 'Air Temperature', 'Carbon Dioxide', 'Carbon Monoxide', 'Chlorophyll', 'Sea Level', 'Sea Surface Temperature', 'Soil Moisture'].map(layer => (
-              <button 
-                key={layer}
-                onClick={() => setActiveLayer(layer)}
-                className={`hover:text-white cursor-pointer transition-colors ${activeLayer === layer ? 'text-[var(--theme-400)] font-bold' : ''}`}
-              >
-                {layer}
-              </button>
-            ))}
+           <div className="flex space-x-6 text-[10px] font-mono tracking-widest text-white/50 uppercase border-t border-white/10 pt-4 w-full justify-center pointer-events-auto relative">
+             {['Satellites Now', 'Visible Earth', 'Air Temperature', 'Carbon Dioxide', 'Carbon Monoxide', 'Chlorophyll', 'Sea Level', 'Sea Surface Temperature', 'Soil Moisture'].map((layer) => (
+               <button 
+                 key={layer}
+                 onClick={() => setActiveLayer(layer)}
+                 className={`hover:text-white transition-colors ${activeLayer === layer ? 'text-white font-bold' : ''}`}
+               >
+                 {layer}
+               </button>
+             ))}
+
+             {/* Info Tooltip */}
+             <div className="relative group cursor-pointer flex items-center ml-2">
+               <Info size={14} className="text-[var(--theme-400)] hover:text-white transition-colors" />
+               <div className="absolute bottom-full right-0 mb-2 w-48 p-2 bg-[#05050a]/90 backdrop-blur-md border border-[var(--theme-500)]/30 text-[var(--theme-400)] text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-[0_0_15px_rgba(var(--theme-rgb),0.2)]">
+                 If the filter isn't rendering clearly, try toggling the TORCHLIGHT to reveal the data overlay!
+               </div>
+             </div>
+           </div>
           </div>
         </div>
       </div>
