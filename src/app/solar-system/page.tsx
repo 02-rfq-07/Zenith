@@ -657,10 +657,10 @@ function CameraController({ isRideMode, targetSatrec, timeOffset, controlsRef, m
            const target = tracking.pos;
            controlsRef.current.target.lerp(target, 0.1);
            const dist = state.camera.position.distanceTo(target);
-           if (dist > 10) {
+           if (dist > 0.1) {
              const desiredPos = target.clone()
-               .add(tracking.up.clone().multiplyScalar(2))
-               .sub(tracking.forward.clone().multiplyScalar(5));
+               .add(tracking.up.clone().multiplyScalar(0.08))
+               .sub(tracking.forward.clone().multiplyScalar(0.15));
              state.camera.position.lerp(desiredPos, 0.05);
            }
         }

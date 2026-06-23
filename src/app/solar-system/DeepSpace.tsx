@@ -13,6 +13,10 @@ function CustomSpacecraftModel({ name, size }: { name: string, size: number }) {
     if (maxDim > 0) clone.scale.set(1/maxDim, 1/maxDim, 1/maxDim);
     
     if (name === 'voyager') clone.rotation.x = Math.PI / 4;
+    if (name === 'jwst') {
+       clone.rotation.x = Math.PI / 2;
+       clone.rotation.y = Math.PI / 2;
+    }
     
     clone.scale.multiplyScalar(size);
     return clone;
@@ -58,15 +62,15 @@ export function DeepSpaceMissions({ timeOffset, selectedPlanet }: { timeOffset: 
         <group ref={voyagerRef}>
           <CustomSpacecraftModel name="voyager" size={2} />
           <Html position={[0, 3, 0]} center style={{ pointerEvents: 'none' }}>
-            <div className={`font-mono text-[8px] uppercase tracking-[0.3em] px-2 py-1 rounded backdrop-blur-sm transition-colors ${selectedPlanet === 'Voyager 1' ? 'bg-[var(--theme-500)]/80 text-white' : 'bg-black/50 text-white/50 border border-white/10'}`}>VOYAGER 1</div>
+            <div className={`font-mono text-[10px] font-bold uppercase tracking-[0.3em] transition-colors drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] ${selectedPlanet === 'Voyager 1' ? 'text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.8)]' : 'text-white/50'}`}>VOYAGER 1</div>
           </Html>
         </group>
 
         <Line points={jwstOrbitPoints} color="#c084fc" opacity={0.3} lineWidth={1} transparent dashed dashSize={2} gapSize={2} />
         <group ref={jwstRef}>
-          <CustomSpacecraftModel name="jwst" size={3} />
+          <CustomSpacecraftModel name="jwst" size={4} />
           <Html position={[0, 3, 0]} center style={{ pointerEvents: 'none' }}>
-             <div className={`font-mono text-[8px] uppercase tracking-[0.3em] px-2 py-1 rounded backdrop-blur-sm transition-colors ${selectedPlanet === 'James Webb Space Telescope' ? 'bg-[var(--theme-500)]/80 text-white' : 'bg-black/50 text-white/50 border border-white/10'}`}>JWST</div>
+             <div className={`font-mono text-[10px] font-bold uppercase tracking-[0.3em] transition-colors drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] ${selectedPlanet === 'James Webb Space Telescope' ? 'text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.8)]' : 'text-white/50'}`}>JWST</div>
           </Html>
         </group>
      </group>
@@ -76,10 +80,41 @@ export function DeepSpaceMissions({ timeOffset, selectedPlanet }: { timeOffset: 
 export function MarsRoverSurface({ radius }: { radius: number }) {
   const roverRef = useRef<THREE.Group>(null);
 
-  useFrame((state) => {
-    const t = state.clock.elapsedTime * 0.05;
-    const currentLat = t;
-    const currentLon = Math.sin(t * 0.5) * 0.5;
+  const [lat, setLat] = useState(0);
+  const [lon, setLon] = useState(0);
+  const headingRef = useRef(0);
+  const stateRef = useRef({ phase: 'forward', timer: 0 });
+
+  useFrame((state, delta) => {
+    stateRef.current.timer -= delta;
+    if (stateRef.current.timer <= 0) {
+      const r = Math.random();
+      if (r < 0.6) {
+        stateRef.current.phase = 'forward';
+        stateRef.current.timer = 5 + Math.random() * 5;
+      } else if (r < 0.8) {
+        stateRef.current.phase = 'turn_left';
+        stateRef.current.timer = 1 + Math.random() * 2;
+      } else {
+        stateRef.current.phase = 'turn_right';
+        stateRef.current.timer = 1 + Math.random() * 2;
+      }
+    }
+
+    const turnSpeed = 0.5;
+    if (stateRef.current.phase === 'turn_left') headingRef.current += delta * turnSpeed;
+    if (stateRef.current.phase === 'turn_right') headingRef.current -= delta * turnSpeed;
+
+    const speed = 0.005; // very slow realistic crawl
+    let currentLat = lat;
+    let currentLon = lon;
+    
+    if (stateRef.current.phase === 'forward') {
+       currentLat += Math.cos(headingRef.current) * delta * speed;
+       currentLon += Math.sin(headingRef.current) * delta * speed;
+       setLat(currentLat);
+       setLon(currentLon);
+    }
 
     if (roverRef.current) {
       const phi = Math.PI / 2 - currentLat;
@@ -92,8 +127,8 @@ export function MarsRoverSurface({ radius }: { radius: number }) {
       
       const normal = new THREE.Vector3(x,y,z).normalize();
       
-      const nextLat = currentLat + 0.01;
-      const nextLon = currentLon + Math.cos(t * 0.5) * 0.01;
+      const nextLat = currentLat + Math.cos(headingRef.current) * 0.01;
+      const nextLon = currentLon + Math.sin(headingRef.current) * 0.01;
       const nPhi = Math.PI / 2 - nextLat;
       const nTheta = nextLon;
       const lookTarget = new THREE.Vector3(
@@ -124,9 +159,9 @@ export function MarsRoverSurface({ radius }: { radius: number }) {
 
   return (
     <group ref={roverRef}>
-      <CustomSpacecraftModel name="rover" size={0.3} />
-      <Html position={[0, 1, 0]} center style={{ pointerEvents: 'none' }}>
-         <div className={`font-mono text-[6px] uppercase tracking-[0.3em] px-1 py-0.5 rounded backdrop-blur-sm bg-red-500/80 text-white border border-red-400`}>PERSEVERANCE</div>
+      <CustomSpacecraftModel name="rover" size={0.05} />
+      <Html position={[0, 0.2, 0]} center style={{ pointerEvents: 'none' }}>
+         <div className={`font-mono text-[8px] font-bold uppercase tracking-[0.3em] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.8)]`}>PERSEVERANCE</div>
       </Html>
     </group>
   );
