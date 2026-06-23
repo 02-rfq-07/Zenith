@@ -6,7 +6,7 @@ import { OrbitControls, Stars, Line, Html, useTexture, useGLTF } from '@react-th
 import * as THREE from 'three';
 import * as satellite from 'satellite.js';
 import Link from 'next/link';
-import { ChevronLeft, Camera, Navigation, Zap, Globe, Info } from 'lucide-react';
+import { ChevronLeft, Camera, Navigation, Zap, Globe, Info, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { useRadarStore } from '@/store/useRadarStore';
 import { useSearchParams } from 'next/navigation';
 import { DynamicSatellite, getSatelliteModelInfo } from '@/components/3D/DynamicSatellite';
