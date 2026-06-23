@@ -14,9 +14,9 @@ function CustomSpacecraftModel({ name, size }: { name: string, size: number }) {
     
     if (name === 'voyager') clone.rotation.x = Math.PI / 4;
     if (name === 'jwst') {
-       clone.rotation.x = Math.PI / 2;
-       clone.rotation.y = 0;
-       clone.rotation.z = Math.PI / 2;
+       clone.rotation.x = 0;
+       clone.rotation.y = Math.PI / 2;
+       clone.rotation.z = 0;
     }
     
     clone.scale.multiplyScalar(size);
