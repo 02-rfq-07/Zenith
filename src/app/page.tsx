@@ -4,6 +4,8 @@ import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 
+import FloatingAstronaut from '@/components/UI/FloatingAstronaut';
+
 export default function Home() {
   const [stars, setStars] = React.useState<any[]>([]);
 
@@ -51,12 +53,14 @@ export default function Home() {
       </div>
 
       <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
+        <FloatingAstronaut />
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: "easeOut" }}
+          className="relative inline-block"
         >
-          <h1 className="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-white to-purple-500 tracking-tighter mb-4">
+          <h1 className="text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-white to-purple-500 tracking-tighter mb-4 relative z-10">
             PROJECT ZENITH
           </h1>
         </motion.div>

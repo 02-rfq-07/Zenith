@@ -4,10 +4,10 @@ import React, { useState } from 'react';
 import { Video } from 'lucide-react';
 
 const FEEDS = [
-  { id: 'nasa', name: 'NASA HDEV', url: 'https://www.youtube.com/embed/21X5lGlDOfg?autoplay=1&mute=1&controls=0&modestbranding=1' },
-  { id: 'iss', name: 'ISS Live', url: 'https://www.youtube.com/embed/xRPjKQtRXR8?autoplay=1&mute=1&controls=0&modestbranding=1' },
-  { id: 'roscosmos', name: 'Roscosmos Orbital', url: 'https://www.youtube.com/embed/21X5lGlDOfg?autoplay=1&mute=1&controls=0&modestbranding=1' },
-  { id: 'isro', name: 'ISRO Telemetry', url: 'https://www.youtube.com/embed/xRPjKQtRXR8?autoplay=1&mute=1&controls=0&modestbranding=1' },
+  { id: 'nasa', name: 'NASA TV', url: 'https://www.youtube.com/embed/KG6SL6Mf7ak?autoplay=1&mute=1&controls=1&modestbranding=1' },
+  { id: 'iss', name: 'ISS Live', url: 'https://www.youtube.com/embed/FuuC4dpSQ1M?autoplay=1&mute=1&controls=1&modestbranding=1' },
+  { id: 'roscosmos', name: 'Roscosmos Orbital', url: '' },
+  { id: 'isro', name: 'ISRO Telemetry', url: 'https://www.youtube.com/embed/KG6SL6Mf7ak?autoplay=1&mute=1&controls=1&modestbranding=1' },
 ];
 
 export default function LiveFeedPanel() {
@@ -22,8 +22,10 @@ export default function LiveFeedPanel() {
           Live Orbital Feed
         </h2>
         <div className="ml-auto flex items-center space-x-2">
-            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_red]" />
-            <span className="text-[10px] text-red-400 font-mono tracking-widest uppercase">REC</span>
+            <span className={`w-2 h-2 rounded-full ${activeFeed.url ? 'bg-red-500 animate-pulse shadow-[0_0_8px_red]' : 'bg-gray-500'}`} />
+            <span className={`text-[10px] font-mono tracking-widest uppercase ${activeFeed.url ? 'text-red-400' : 'text-gray-400'}`}>
+              {activeFeed.url ? 'REC' : 'OFFLINE'}
+            </span>
         </div>
       </div>
       <div className="flex space-x-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
@@ -42,17 +44,27 @@ export default function LiveFeedPanel() {
         ))}
       </div>
 
-      <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-white/10 bg-black/50 z-10 shadow-inner">
-        <iframe 
-          key={activeFeed.id}
-          className="w-full h-full object-cover scale-105"
-          src={activeFeed.url}
-          title="Live Orbital Feed" 
-          frameBorder="0" 
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-          allowFullScreen
-          style={{ border: 'none' }}
-        ></iframe>
+      <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-white/10 bg-black/50 z-10 shadow-inner flex flex-col items-center justify-center">
+        {activeFeed.url ? (
+          <iframe 
+            key={activeFeed.id}
+            className="absolute inset-0 w-full h-full object-cover scale-105"
+            src={activeFeed.url}
+            title="Live Orbital Feed" 
+            frameBorder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" 
+            allowFullScreen
+            style={{ border: 'none' }}
+          ></iframe>
+        ) : (
+          <div className="text-center p-6 relative z-20 flex flex-col items-center justify-center">
+            <Video size={32} className="text-orange-500/40 mb-3" />
+            <h3 className="text-sm text-orange-400 font-mono tracking-widest uppercase mb-1">No Active Feed</h3>
+            <p className="text-white/40 text-[10px] font-mono tracking-wider max-w-[200px] leading-relaxed">
+              There are no current live events. Please check back later!
+            </p>
+          </div>
+        )}
         
         {/* HUD Overlays on top of the video */}
         <div className="absolute top-4 left-4 text-[10px] text-white/70 font-mono tracking-widest uppercase bg-black/50 px-2 py-1 rounded backdrop-blur-sm pointer-events-none border border-white/10">

@@ -25,12 +25,12 @@ export default function LiveZenithRadar({ satellites }: LiveZenithRadarProps) {
       <div className="absolute inset-8 pointer-events-none rounded-full border-t border-[var(--theme-300)]/30 animate-[spin_20s_linear_infinite_reverse]" />
       
       {/* Sci-fi data streams on corners */}
-      <div className="absolute top-0 left-0 text-[8px] text-[var(--theme-400)]/40 font-mono text-left leading-tight hidden md:block z-40 pointer-events-none">
+      <div className="absolute top-2 left-2 text-[8px] text-[var(--theme-400)]/40 font-mono text-left leading-tight hidden md:block z-40 pointer-events-none">
          [SYS.OP.01] NORMAL<br/>
          AZ_OFFSET: {(Math.random() * 0.5).toFixed(4)}<br/>
          EL_REF: {(Math.random() * 90).toFixed(4)}
       </div>
-      <div className="absolute bottom-0 right-0 text-[8px] text-[var(--theme-400)]/40 font-mono text-right leading-tight hidden md:block z-40 pointer-events-none">
+      <div className="absolute bottom-2 right-2 text-[8px] text-[var(--theme-400)]/40 font-mono text-right leading-tight hidden md:block z-40 pointer-events-none">
          T_OFFSET: {timeOffset}s<br/>
          ORBIT_SYNC: OK<br/>
          LAT: {latitude.toFixed(2)}
@@ -93,10 +93,14 @@ export default function LiveZenithRadar({ satellites }: LiveZenithRadarProps) {
                 left: `${x}%`,
                 top: `${y}%`,
               }}
-              title={sat.name}
             >
               {/* The actual dot */}
               <div className={`w-2.5 h-2.5 rounded-full ${colorClass} ${shadowClass} group-hover:scale-150 transition-transform`} />
+              
+              {/* Tooltip for hover */}
+              <div className="absolute bottom-full mb-2 hidden group-hover:block bg-black/80 border border-[var(--theme-500)]/50 px-2 py-1 rounded text-[10px] text-white whitespace-nowrap pointer-events-none">
+                {sat.name}
+              </div>
               
               {/* Selection Ring */}
               {isSelected && (

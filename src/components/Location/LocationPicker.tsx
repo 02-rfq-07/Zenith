@@ -17,6 +17,20 @@ export default function LocationPicker() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [tles, setTles] = useState<satellite.SatRec[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [globeSize, setGlobeSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      if (!entries || entries.length === 0) return;
+      setGlobeSize({
+        width: entries[0].contentRect.width,
+        height: entries[0].contentRect.height
+      });
+    });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     fetch('/active.txt')
@@ -81,8 +95,8 @@ export default function LocationPicker() {
           </button>
         </div>
 
-        <div className="relative flex-1 rounded-xl overflow-hidden cursor-crosshair border border-white/10">
-          {typeof window !== 'undefined' && (
+        <div ref={containerRef} className="relative flex-1 rounded-xl overflow-hidden cursor-crosshair border border-white/10 w-full">
+          {typeof window !== 'undefined' && globeSize.width > 0 && (
             <Globe
               ref={globeRef}
               showGlobe={true}
@@ -91,11 +105,10 @@ export default function LocationPicker() {
               atmosphereAltitude={0.2}
               globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
               bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
-              // Fallback polygon rendering if image fails
               hexPolygonColor={() => 'rgba(34, 211, 238, 0.4)'}
               backgroundColor="rgba(0,0,0,0)"
-              width={220}
-              height={220}
+              width={globeSize.width}
+              height={globeSize.height}
               onGlobeClick={handleGlobeClick}
               onGlobeReady={() => setIsReady(true)}
               htmlElementsData={combinedData}

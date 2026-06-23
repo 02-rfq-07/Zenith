@@ -8,6 +8,7 @@ import { SatelliteData, ZenithSatellite, WorkerMessage } from '@/workers/orbital
 
 import LiveZenithRadar from '@/components/Radar/LiveZenithRadar';
 import LocationPicker from '@/components/Location/LocationPicker';
+import LiveLocationTracker from '@/components/Location/LiveLocationTracker';
 import ObjectInfoPanel from '@/components/Panels/ObjectInfoPanel';
 import ZenithTimeMachine from '@/components/Controls/ZenithTimeMachine';
 import DebrisLens from '@/components/Lenses/DebrisLens';
@@ -131,8 +132,9 @@ export default function RadarDashboard() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          <motion.div layout className="w-full"><LocationPicker /></motion.div>
-          <motion.div layout className="w-full"><GlobalPreviewPanel /></motion.div>
+          <motion.div layout className="w-full relative z-50"><LocationPicker /></motion.div>
+          <motion.div layout className="w-full relative z-40"><LiveLocationTracker /></motion.div>
+          <motion.div layout className="w-full relative z-30"><GlobalPreviewPanel /></motion.div>
           <motion.div layout className="w-full"><SkyVisibilityScore /></motion.div>
           <motion.div layout className="w-full"><DebrisLens /></motion.div>
         </motion.div>
@@ -157,10 +159,10 @@ export default function RadarDashboard() {
             </div>
           ) : (
             <div className="w-full h-full flex flex-col relative">
-              <div className="absolute top-0 left-0 z-20">
-                <div className="text-[10px] text-cyan-500/70 font-mono uppercase tracking-widest">Anomalies Detected</div>
-                <div className="text-4xl font-black text-cyan-400 font-mono">
-                  {satellites.filter(s => showDebris ? (s.type === 'DEBRIS' || s.type === 'ROCKET BODY') : !(s.type === 'DEBRIS' || s.type === 'ROCKET BODY')).length}
+              <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-row items-center space-x-2">
+                <div className="text-[10px] text-orange-500/70 font-mono uppercase tracking-widest">Anomalies Detected:</div>
+                <div className="text-xl font-black text-orange-400 font-mono">
+                  {satellites.filter(s => showDebris ? true : !(s.type === 'DEBRIS' || s.type === 'ROCKET BODY')).length}
                 </div>
               </div>
               <div className="flex-1 flex items-center justify-center">

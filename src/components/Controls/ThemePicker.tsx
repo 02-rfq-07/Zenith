@@ -1,6 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRadarStore } from '@/store/useRadarStore';
+import { AnimatePresence, motion } from 'framer-motion';
 
 const THEMES = [
   { name: 'Cyan (Default)', rgb: '6, 182, 212', t100: '#cffafe', t300: '#67e8f9', t400: '#22d3ee', t500: '#06b6d4', t900: '#164e63' },
@@ -11,6 +13,18 @@ const THEMES = [
 ];
 
 export default function ThemePicker() {
+  const { latitude, longitude } = useRadarStore();
+  const [showWarning, setShowWarning] = useState(false);
+
+  useEffect(() => {
+    // Show warning briefly when user changes target location
+    if (latitude !== 0 || longitude !== 0) {
+      setShowWarning(true);
+      const timer = setTimeout(() => setShowWarning(false), 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [latitude, longitude]);
+
   const applyTheme = (theme: typeof THEMES[0]) => {
     const root = document.documentElement;
     root.style.setProperty('--theme-rgb', theme.rgb);
@@ -22,7 +36,7 @@ export default function ThemePicker() {
   };
 
   return (
-    <div className="flex items-center space-x-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+    <div className="relative flex items-center space-x-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
       <span className="text-[10px] text-white/50 uppercase tracking-widest font-mono mr-2">Color Matrix</span>
       {THEMES.map((t) => (
         <button
@@ -33,6 +47,20 @@ export default function ThemePicker() {
           title={t.name}
         />
       ))}
+      
+      {/* Visibility Warning Popup */}
+      <AnimatePresence>
+        {showWarning && (
+          <motion.div
+            initial={{ opacity: 0, x: 10, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 10, scale: 0.95 }}
+            className="absolute top-1/2 -translate-y-1/2 right-full mr-4 w-56 bg-orange-950 border border-orange-500 text-orange-200 p-3 rounded-lg text-xs font-mono shadow-[0_0_20px_rgba(249,115,22,0.6)] z-50 pointer-events-none"
+          >
+            <strong>Note:</strong> If anomalies aren't visible on the radar at this location, try picking a new Color Matrix here!
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,13 +1,27 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Compass } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function GlobalPreviewPanel() {
+  const [showPopup, setShowPopup] = useState(false);
+
+  useEffect(() => {
+    // Show popup every 1 minute
+    const interval = setInterval(() => {
+      setShowPopup(true);
+      // Hide after 8 seconds
+      setTimeout(() => setShowPopup(false), 8000);
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div className="glass-panel hud-border p-4 rounded-2xl flex flex-col z-10 relative overflow-hidden h-[200px]">
+    <div className="glass-panel hud-border p-4 rounded-2xl flex flex-col z-10 relative !overflow-visible h-[200px]">
+      
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-[var(--theme-400)] font-mono tracking-widest uppercase text-xs font-bold flex items-center">
           <Compass size={14} className="mr-2" /> Solar System Preview
@@ -15,6 +29,20 @@ export default function GlobalPreviewPanel() {
       </div>
 
       <div className="relative flex-1 rounded-xl overflow-hidden border border-[var(--theme-500)]/20 bg-black flex items-center justify-center">
+        {/* Reminder Popup */}
+        <AnimatePresence>
+          {showPopup && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              className="absolute top-3 left-1/2 -translate-x-1/2 w-11/12 max-w-[220px] bg-cyan-950/90 border border-cyan-500/50 text-cyan-200 p-2 rounded-lg text-[10px] font-mono shadow-[0_0_15px_rgba(6,182,212,0.4)] z-50 text-center pointer-events-none backdrop-blur-sm"
+            >
+              <strong>Tip:</strong> Click below to explore the interactive 3D Solar System Tracking Matrix!
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Fake Starfield Background */}
         <div className="absolute inset-0 opacity-50" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
         
