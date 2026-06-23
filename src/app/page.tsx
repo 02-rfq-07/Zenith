@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 
 import FloatingAstronaut from '@/components/UI/FloatingAstronaut';
+import Galaxy from '@/components/UI/Galaxy';
 import LatestArticles from '@/components/Home/LatestArticles';
 import ZenithTerminal from '@/components/Home/ZenithTerminal';
 import SciFiDiary from '@/components/Home/SciFiDiary';
@@ -18,32 +19,27 @@ export default function Home() {
 
   React.useEffect(() => {
     // Generate random stars on the client to avoid SSR hydration mismatch
-    const generatedStars = [...Array(100)].map(() => ({
-      width: Math.random() * 3 + 'px',
-      height: Math.random() * 3 + 'px',
-      top: Math.random() * 100 + '%',
-      left: Math.random() * 100 + '%',
-      opacity: Math.random() * 0.5 + 0.3,
-      duration: Math.random() * 3 + 2,
-    }));
-    setStars(generatedStars);
+    // Kept some minimal state in case we need it, but Galaxy does the heavy lifting now
   }, []);
 
   return (
     <main className="relative min-h-screen flex flex-col items-center bg-[#020617] overflow-x-hidden selection:bg-cyan-500/30">
       
       {/* Background Starfield effect - fixed to viewport so it scrolls with the user */}
-      <div className="fixed inset-0 z-0">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-cyan-950/40 via-[#020617] to-[#020617]"></div>
-        {stars.map((star, i) => (
-          <motion.div
-            key={i}
-            className="absolute bg-white rounded-full"
-            style={{ width: star.width, height: star.height, top: star.top, left: star.left, opacity: star.opacity }}
-            animate={{ opacity: [0.2, 1, 0.2], scale: [1, 1.5, 1] }}
-            transition={{ duration: star.duration, repeat: Infinity, ease: "easeInOut" }}
-          />
-        ))}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <Galaxy 
+          mouseInteraction
+          density={1}
+          glowIntensity={0.3}
+          saturation={0}
+          hueShift={140}
+          twinkleIntensity={0.3}
+          rotationSpeed={0.1}
+          starSpeed={0.5}
+          speed={1}
+          transparent={true}
+        />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-cyan-950/40 via-transparent to-transparent pointer-events-none"></div>
       </div>
 
       {/* Hero Section (Min Height Screen) */}

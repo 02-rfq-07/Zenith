@@ -19,6 +19,9 @@ import LiveFeedPanel from '@/components/Panels/LiveFeedPanel';
 import ThemePicker from '@/components/Controls/ThemePicker';
 import { ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import SimpleStars from '@/components/UI/SimpleStars';
+import BlackHoleMiniGame from '@/components/MiniGames/BlackHoleMiniGame';
+import AnomalyLogList from '@/components/Panels/AnomalyLogList';
 
 export default function RadarDashboard() {
   const { latitude, longitude, timeOffset, showDebris, showConstellations, toggleConstellations, ambientAudioEnabled, toggleAudio } = useRadarStore();
@@ -133,7 +136,7 @@ export default function RadarDashboard() {
   return (
     <div className="min-h-screen bg-[#020202] text-white p-4 md:p-8 font-sans selection:bg-cyan-500/30 overflow-x-hidden relative">
       {/* Background Ambience */}
-      <div className="fixed inset-0 z-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-900/5 via-black to-black pointer-events-none" />
+      <SimpleStars />
 
       {/* Header */}
       <header className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between mb-8 border-b border-white/10 pb-4">
@@ -184,6 +187,7 @@ export default function RadarDashboard() {
           <motion.div layout className="w-full relative z-30"><GlobalPreviewPanel /></motion.div>
           <motion.div layout className="w-full"><SkyVisibilityScore /></motion.div>
           <motion.div layout className="w-full"><DebrisLens /></motion.div>
+          <motion.div layout className="w-full"><BlackHoleMiniGame /></motion.div>
         </motion.div>
 
         {/* Center Column: Radar View */}
@@ -205,15 +209,14 @@ export default function RadarDashboard() {
               </p>
             </div>
           ) : (
-            <div className="w-full h-full flex flex-col relative">
-              <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-row items-center space-x-2">
+            <div className="w-full flex flex-col items-center justify-center relative">
+              <LiveZenithRadar satellites={satellites} />
+              
+              <div className="mt-6 flex flex-row items-center space-x-2 z-20">
                 <div className="text-[10px] text-orange-500/70 font-mono uppercase tracking-widest">Anomalies Detected:</div>
                 <div className="text-xl font-black text-orange-400 font-mono">
                   {satellites.filter(s => showDebris ? true : !(s.type === 'DEBRIS' || s.type === 'ROCKET BODY')).length}
                 </div>
-              </div>
-              <div className="flex-1 flex items-center justify-center">
-                 <LiveZenithRadar satellites={satellites} />
               </div>
             </div>
           )}
@@ -260,6 +263,10 @@ export default function RadarDashboard() {
              </motion.div>
           </AnimatePresence>
           
+          <motion.div layout className="w-full">
+            <AnomalyLogList satellites={satellites} />
+          </motion.div>
+
           <motion.div layout className="w-full mt-auto">
              <ZenithTimeMachine />
           </motion.div>
