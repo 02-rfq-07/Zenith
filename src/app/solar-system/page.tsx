@@ -1054,7 +1054,7 @@ export default function SolarSystemViewer() {
              {/* Info Tooltip */}
              <div className="relative group cursor-pointer flex items-center ml-2">
                <Info size={14} className="text-[var(--theme-400)] hover:text-white transition-colors" />
-               <div className="absolute bottom-full right-0 mb-2 w-48 p-2 bg-[#05050a]/90 backdrop-blur-md border border-[var(--theme-500)]/30 text-[var(--theme-400)] text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-[0_0_15px_rgba(var(--theme-rgb),0.2)]">
+               <div className="absolute bottom-full right-0 mb-2 w-64 p-3 bg-[#05050a]/90 backdrop-blur-md border border-[var(--theme-500)]/30 text-[var(--theme-400)] text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-[0_0_15px_rgba(var(--theme-rgb),0.2)] whitespace-normal leading-relaxed">
                  If the filter isn't rendering clearly, try toggling the TORCHLIGHT to reveal the data overlay!
                </div>
              </div>
