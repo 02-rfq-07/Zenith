@@ -208,6 +208,54 @@ function Planet({ data, sunPos, isSelected, onClick, onDoubleClick, timeOffset }
   );
 }
 
+function MoonOrbiter({ onDoubleClick, timeOffset }: { onDoubleClick: (e: any) => void, timeOffset: number }) {
+  const meshRef = useRef<THREE.Group>(null);
+  const moonDistance = 30;
+  const speed = 0.05; // Orbit speed
+  const rotationSpeed = 0.01; // Rotation speed
+  
+  useFrame((state, delta) => {
+    if (meshRef.current) {
+      // Combine continuous time with timeOffset for time travel
+      const t = state.clock.elapsedTime * speed + (timeOffset * 0.01);
+      meshRef.current.position.set(
+        Math.cos(t) * moonDistance,
+        0,
+        Math.sin(t) * moonDistance
+      );
+      meshRef.current.rotation.y += delta * rotationSpeed;
+    }
+  });
+
+  const orbitPoints = useMemo(() => {
+    const pts = [];
+    for (let i = 0; i <= 128; i++) {
+      const a = (i / 128) * Math.PI * 2;
+      pts.push(new THREE.Vector3(moonDistance * Math.cos(a), 0, moonDistance * Math.sin(a)));
+    }
+    return pts;
+  }, []);
+
+  return (
+    <group>
+      <group ref={meshRef} onDoubleClick={onDoubleClick}>
+        <CustomPlanetModel name="moon" radius={1737 * SCALE} tilt={1.54 * Math.PI / 180} />
+        
+        {/* Invisible hit-box */}
+        <mesh visible={false}>
+          <sphereGeometry args={[1737 * SCALE * 1.5, 16, 16]} />
+          <meshBasicMaterial />
+        </mesh>
+        
+        <Html position={[0, 1737 * SCALE + 2, 0]} center style={{ pointerEvents: 'none' }}>
+          <div className="font-mono text-[8px] uppercase tracking-[0.3em] px-2 py-1 rounded backdrop-blur-sm bg-black/50 text-white/50 border border-white/10">MOON</div>
+        </Html>
+      </group>
+      <Line points={orbitPoints} color="#d1d5db" opacity={0.2} lineWidth={1} transparent />
+    </group>
+  );
+}
+
 function AsteroidBelt({ sunPos, seed, count = 1000 }: { sunPos: THREE.Vector3, seed: number, count?: number }) {
   const meshRefs = useRef<THREE.InstancedMesh[]>([]);
   
@@ -324,9 +372,7 @@ function CelestialBodies({ onDoubleClick, selectedPlanet, setSelectedPlanet, tim
 
       <Line points={earthOrbitPoints} color={selectedPlanet === 'Earth' ? '#38bdf8' : '#38bdf8'} opacity={selectedPlanet === 'Earth' ? 0.8 : 0.4} lineWidth={selectedPlanet === 'Earth' ? 3 : 1} transparent />
 
-      <group position={[moonDistance, 0, 0]} onDoubleClick={onDoubleClick}>
-        <CustomPlanetModel name="moon" radius={1737 * SCALE} tilt={1.54 * Math.PI / 180} />
-      </group>
+      <MoonOrbiter onDoubleClick={onDoubleClick} timeOffset={timeOffset} />
 
       {PLANET_DATA.map(p => (
         <Planet key={p.name} data={p} sunPos={sunPos} isSelected={selectedPlanet === p.name} onClick={setSelectedPlanet} onDoubleClick={onDoubleClick} timeOffset={timeOffset} />
@@ -592,7 +638,8 @@ function CameraController({ isRideMode, targetSatrec, timeOffset, controlsRef, m
         state.camera.position.lerp(desiredPos, 0.05);
       }
     } else if (selectedPlanet === 'Moon') {
-      const target = new THREE.Vector3(30, 0, 0);
+      const t = state.clock.elapsedTime * 0.05 + (timeOffset * 0.01);
+      const target = new THREE.Vector3(Math.cos(t) * 30, 0, Math.sin(t) * 30);
       controlsRef.current.target.lerp(target, 0.05);
       const dist = state.camera.position.distanceTo(target);
       if (dist > 5) {
@@ -1039,8 +1086,8 @@ export default function SolarSystemViewer() {
           </div>
           
           {/* Bottom Nav Bar matching NASA Eyes "Vital Signs" */}
-          <div className="w-screen bg-[#05050a]/90 backdrop-blur-md border-t border-white/10 mt-6 -mx-4 -mb-4 px-8 py-3 flex items-center justify-center space-x-6 text-xs text-white/50 tracking-wide pointer-events-auto overflow-x-auto whitespace-nowrap scrollbar-hide">
-           <div className="flex space-x-6 text-[10px] font-mono tracking-widest text-white/50 uppercase border-t border-white/10 pt-4 w-full justify-center pointer-events-auto relative">
+          <div className="w-screen bg-[#05050a]/90 backdrop-blur-md border-t border-white/10 mt-6 -mx-4 -mb-4 px-8 py-3 flex items-center relative pointer-events-auto">
+           <div className="flex space-x-6 text-[10px] font-mono tracking-widest text-white/50 uppercase w-full justify-center overflow-x-auto whitespace-nowrap scrollbar-hide px-12">
              {['Satellites Now', 'Visible Earth', 'Air Temperature', 'Carbon Dioxide', 'Carbon Monoxide', 'Chlorophyll', 'Sea Level', 'Sea Surface Temperature', 'Soil Moisture'].map((layer) => (
                <button 
                  key={layer}
@@ -1050,13 +1097,13 @@ export default function SolarSystemViewer() {
                  {layer}
                </button>
              ))}
+           </div>
 
-             {/* Info Tooltip */}
-             <div className="relative group cursor-pointer flex items-center ml-2">
-               <Info size={14} className="text-[var(--theme-400)] hover:text-white transition-colors" />
-               <div className="absolute bottom-full right-0 mb-2 w-64 p-3 bg-[#05050a]/90 backdrop-blur-md border border-[var(--theme-500)]/30 text-[var(--theme-400)] text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-[0_0_15px_rgba(var(--theme-rgb),0.2)] whitespace-normal leading-relaxed">
-                 If the filter isn't rendering clearly, try toggling the TORCHLIGHT to reveal the data overlay!
-               </div>
+           {/* Info Tooltip OUTSIDE overflow container */}
+           <div className="absolute right-8 top-1/2 -translate-y-1/2 group cursor-pointer flex items-center z-50">
+             <Info size={14} className="text-[var(--theme-400)] hover:text-white transition-colors" />
+             <div className="absolute bottom-full right-0 mb-4 w-64 p-3 bg-[#05050a]/95 backdrop-blur-md border border-[var(--theme-500)]/30 text-[var(--theme-400)] text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-[0_0_15px_rgba(var(--theme-rgb),0.2)] whitespace-normal leading-relaxed text-left">
+               If the filter isn't rendering clearly, try toggling the TORCHLIGHT to reveal the data overlay!
              </div>
            </div>
           </div>
@@ -1121,7 +1168,7 @@ export default function SolarSystemViewer() {
                    <span>SUN</span>
                  </button>
                  <button 
-                   onClick={() => { setSelectedPlanet('Moon'); setShowPlanetsMenu(false); setManualTarget(new THREE.Vector3(30,0,0)); setIsRideMode(false); }}
+                   onClick={() => { setSelectedPlanet('Moon'); setShowPlanetsMenu(false); setManualTarget(null); setIsRideMode(false); }}
                    className="text-left px-4 py-2 text-xs font-mono tracking-widest hover:bg-[var(--theme-500)]/20 hover:text-white transition-colors border-b border-white/5 flex items-center space-x-2"
                  >
                    <div className="w-2 h-2 rounded-full bg-[#cbd5e1]" />
