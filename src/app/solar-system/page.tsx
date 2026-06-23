@@ -602,6 +602,13 @@ function TargetSatellite({ satrec, timeOffset, isRideMode, velocity, name, onDou
 
 function CameraController({ isRideMode, targetSatrec, timeOffset, controlsRef, manualTarget, selectedPlanet }: any) {
   const { camera } = useThree();
+  const transitionStartRef = useRef<number>(Date.now());
+  const prevTargetRef = useRef<string>('');
+  
+  useEffect(() => {
+    (window as any).solarSystemCamera = camera;
+    (window as any).solarSystemControls = controlsRef.current;
+  }, [camera, controlsRef]);
   
   useEffect(() => {
     const light = new THREE.PointLight(0xffffff, 5.0, 150); // Increased torchlight intensity
@@ -612,10 +619,17 @@ function CameraController({ isRideMode, targetSatrec, timeOffset, controlsRef, m
   useFrame((state) => {
     if (!controlsRef.current) return;
     
+    const currentTargetStr = manualTarget ? 'manual' : (isRideMode ? 'ride' : (selectedPlanet || 'Earth'));
+    if (currentTargetStr !== prevTargetRef.current) {
+       transitionStartRef.current = Date.now();
+       prevTargetRef.current = currentTargetStr;
+    }
+    
+    const isTransitioning = (Date.now() - transitionStartRef.current) < 2000;
+    
     if (manualTarget) {
       controlsRef.current.target.lerp(manualTarget, 0.05);
-      const dist = state.camera.position.distanceTo(manualTarget);
-      if (dist > 20) {
+      if (isTransitioning) {
         const desiredPos = manualTarget.clone().add(new THREE.Vector3(1, 0.2, 1).normalize().multiplyScalar(15));
         state.camera.position.lerp(desiredPos, 0.05);
       }
@@ -628,8 +642,7 @@ function CameraController({ isRideMode, targetSatrec, timeOffset, controlsRef, m
         const satPos = new THREE.Vector3(pos.x * SCALE, pos.z * SCALE, -pos.y * SCALE);
         controlsRef.current.target.lerp(satPos, 0.05);
         
-        const dist = state.camera.position.distanceTo(satPos);
-        if (dist > 3) {
+        if (isTransitioning) {
           const desiredPos = satPos.clone().add(new THREE.Vector3(1, 1, 1).normalize().multiplyScalar(2));
           state.camera.position.lerp(desiredPos, 0.05);
         }
@@ -637,8 +650,7 @@ function CameraController({ isRideMode, targetSatrec, timeOffset, controlsRef, m
     } else if (selectedPlanet === 'Sun') {
       const target = new THREE.Vector3(-200, 0, 0);
       controlsRef.current.target.lerp(target, 0.05);
-      const dist = state.camera.position.distanceTo(target);
-      if (dist > 40) {
+      if (isTransitioning) {
         const desiredPos = target.clone().add(new THREE.Vector3(1, 0.2, 1).normalize().multiplyScalar(30));
         state.camera.position.lerp(desiredPos, 0.05);
       }
@@ -646,8 +658,7 @@ function CameraController({ isRideMode, targetSatrec, timeOffset, controlsRef, m
       const t = state.clock.elapsedTime * 0.05 + (timeOffset * 0.01);
       const target = new THREE.Vector3(Math.cos(t) * 30, 0, Math.sin(t) * 30);
       controlsRef.current.target.lerp(target, 0.05);
-      const dist = state.camera.position.distanceTo(target);
-      if (dist > 5) {
+      if (isTransitioning) {
         const desiredPos = target.clone().add(new THREE.Vector3(1, 0.2, 1).normalize().multiplyScalar(4));
         state.camera.position.lerp(desiredPos, 0.05);
       }
@@ -656,8 +667,7 @@ function CameraController({ isRideMode, targetSatrec, timeOffset, controlsRef, m
         if (tracking) {
            const target = tracking.pos;
            controlsRef.current.target.lerp(target, 0.1);
-           const dist = state.camera.position.distanceTo(target);
-           if (dist > 0.1) {
+           if (isTransitioning) {
              const desiredPos = target.clone()
                .add(tracking.up.clone().multiplyScalar(0.08))
                .sub(tracking.forward.clone().multiplyScalar(0.15));
@@ -668,14 +678,18 @@ function CameraController({ isRideMode, targetSatrec, timeOffset, controlsRef, m
        const t = Math.max(0, state.clock.elapsedTime * 0.1 + (timeOffset * 0.1));
        const target = new THREE.Vector3(100 + t * 10, t * 2, t * 5);
        controlsRef.current.target.lerp(target, 0.05);
-       const desiredPos = target.clone().add(new THREE.Vector3(5, 5, 10));
-       state.camera.position.lerp(desiredPos, 0.05);
+       if (isTransitioning) {
+         const desiredPos = target.clone().add(new THREE.Vector3(5, 5, 10));
+         state.camera.position.lerp(desiredPos, 0.05);
+       }
     } else if (selectedPlanet === 'James Webb Space Telescope') {
        const ht = state.clock.elapsedTime * 0.5 + (timeOffset * 0.01);
        const target = new THREE.Vector3(50, Math.sin(ht)*5, Math.cos(ht)*5);
        controlsRef.current.target.lerp(target, 0.05);
-       const desiredPos = target.clone().add(new THREE.Vector3(10, 5, 10));
-       state.camera.position.lerp(desiredPos, 0.05);
+       if (isTransitioning) {
+         const desiredPos = target.clone().add(new THREE.Vector3(10, 5, 10));
+         state.camera.position.lerp(desiredPos, 0.05);
+       }
     } else if (selectedPlanet && selectedPlanet !== 'Earth') {
       const p = PLANET_DATA.find(x => x.name === selectedPlanet);
       if (p) {
@@ -687,8 +701,7 @@ function CameraController({ isRideMode, targetSatrec, timeOffset, controlsRef, m
          );
          controlsRef.current.target.lerp(target, 0.05);
          
-         const dist = state.camera.position.distanceTo(target);
-         if (dist > p.radius * 4) {
+         if (isTransitioning) {
            const desiredPos = target.clone().add(new THREE.Vector3(1, 0.5, 1).normalize().multiplyScalar(p.radius * 3));
            state.camera.position.lerp(desiredPos, 0.05);
          }
@@ -697,13 +710,10 @@ function CameraController({ isRideMode, targetSatrec, timeOffset, controlsRef, m
       const target = new THREE.Vector3(0, 0, 0);
       controlsRef.current.target.lerp(target, 0.05);
       
-      if (selectedPlanet === 'Earth') {
-         const dist = state.camera.position.distanceTo(target);
+      if (selectedPlanet === 'Earth' && isTransitioning) {
          const earthRadius = EARTH_RADIUS_KM * SCALE;
-         if (dist > earthRadius * 2) {
-           const desiredPos = target.clone().add(new THREE.Vector3(1, 0.2, 1).normalize().multiplyScalar(earthRadius * 1.5));
-           state.camera.position.lerp(desiredPos, 0.05);
-         }
+         const desiredPos = target.clone().add(new THREE.Vector3(1, 0.2, 1).normalize().multiplyScalar(earthRadius * 1.5));
+         state.camera.position.lerp(desiredPos, 0.05);
       }
     }
     
@@ -1296,7 +1306,7 @@ export default function SolarSystemViewer() {
            <span>Torchlight</span>
          </button>
 
-         <div className="flex space-x-2 mt-4 self-end pointer-events-auto">
+         <div className="flex space-x-2 mt-4 self-end pointer-events-auto items-center">
             <button onClick={() => {
                const cam = (window as any).solarSystemCamera;
                const controls = (window as any).solarSystemControls;
@@ -1304,8 +1314,8 @@ export default function SolarSystemViewer() {
                   const dir = new THREE.Vector3().subVectors(controls.target, cam.position).normalize();
                   cam.position.add(dir.multiplyScalar(cam.position.distanceTo(controls.target) * 0.2));
                }
-            }} className="flex justify-center items-center bg-black/50 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 p-2 rounded-full shadow-lg transition-colors w-10 h-10">
-               <ZoomIn size={16} />
+            }} className="flex justify-center items-center bg-black/50 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 rounded-full shadow-lg transition-colors w-8 h-8 font-mono font-bold text-base">
+               +
             </button>
             <button onClick={() => {
                const cam = (window as any).solarSystemCamera;
@@ -1314,16 +1324,16 @@ export default function SolarSystemViewer() {
                   const dir = new THREE.Vector3().subVectors(cam.position, controls.target).normalize();
                   cam.position.add(dir.multiplyScalar(cam.position.distanceTo(controls.target) * 0.25));
                }
-            }} className="flex justify-center items-center bg-black/50 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 p-2 rounded-full shadow-lg transition-colors w-10 h-10">
-               <ZoomOut size={16} />
+            }} className="flex justify-center items-center bg-black/50 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 rounded-full shadow-lg transition-colors w-8 h-8 font-mono font-bold text-base">
+               -
             </button>
             <button onClick={() => {
                setSelectedPlanet('Earth');
                setManualTarget(null);
                setTargetSatrec(null);
                setIsRideMode(false);
-            }} className="flex justify-center items-center bg-black/50 border border-[var(--theme-500)]/50 text-[var(--theme-400)] hover:bg-[var(--theme-500)]/20 p-2 rounded-full shadow-[0_0_15px_rgba(var(--theme-rgb),0.3)] transition-colors w-10 h-10">
-               <RotateCcw size={16} />
+            }} className="flex justify-center items-center bg-black/50 border border-[var(--theme-500)]/50 text-[var(--theme-400)] hover:bg-[var(--theme-500)]/20 px-3 py-1 rounded-full shadow-[0_0_15px_rgba(var(--theme-rgb),0.3)] transition-colors h-8 font-mono text-[10px] uppercase tracking-widest font-bold">
+               Reset
             </button>
          </div>
       </div>
