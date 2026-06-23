@@ -9,7 +9,7 @@ interface LiveZenithRadarProps {
 }
 
 export default function LiveZenithRadar({ satellites }: LiveZenithRadarProps) {
-  const { selectedObjectId, setSelectedObject, latitude, longitude, timeOffset, showDebris } = useRadarStore();
+  const { selectedObjectId, setSelectedObject, latitude, longitude, timeOffset, showDebris, showConstellations } = useRadarStore();
 
   const filteredSatellites = satellites.filter((sat) => {
     const isDeb = sat.type === 'DEBRIS' || sat.type === 'ROCKET BODY';
@@ -59,6 +59,44 @@ export default function LiveZenithRadar({ satellites }: LiveZenithRadarProps) {
         {/* Crosshairs */}
         <div className="absolute w-full h-px bg-[var(--theme-500)]/30" />
         <div className="absolute h-full w-px bg-[var(--theme-500)]/30" />
+
+        {/* Constellations Overlay */}
+        {showConstellations && (
+          <svg 
+            className="absolute inset-0 w-full h-full pointer-events-none z-10 opacity-40 transition-transform duration-1000 ease-in-out"
+            style={{ transform: `rotate(${longitude}deg) translateY(${-(latitude / 90) * 20}%)` }}
+          >
+            <g className="animate-[spin_240s_linear_infinite]" style={{ transformOrigin: 'center' }}>
+              <path d="M 60 90 L 105 75 L 120 120 L 90 150 Z" fill="none" stroke="#a855f7" strokeWidth="1" strokeDasharray="4 4" />
+              <circle cx="60" cy="90" r="2" fill="#a855f7" />
+              <circle cx="105" cy="75" r="2" fill="#a855f7" />
+              <circle cx="120" cy="120" r="2" fill="#a855f7" />
+              <circle cx="90" cy="150" r="2" fill="#a855f7" />
+              <text x="105" y="65" fill="#a855f7" fontSize="10" fontFamily="monospace">ORION</text>
+
+              <path d="M 210 180 L 240 150 L 255 195 L 225 225 L 195 210" fill="none" stroke="#a855f7" strokeWidth="1" strokeDasharray="4 4" />
+              <circle cx="210" cy="180" r="2" fill="#a855f7" />
+              <circle cx="240" cy="150" r="2" fill="#a855f7" />
+              <circle cx="255" cy="195" r="2" fill="#a855f7" />
+              <circle cx="225" cy="225" r="2" fill="#a855f7" />
+              <circle cx="195" cy="210" r="2" fill="#a855f7" />
+              <text x="245" y="140" fill="#a855f7" fontSize="10" fontFamily="monospace">URSA MAJOR</text>
+
+              <path d="M 150 240 L 180 255 L 165 285" fill="none" stroke="#a855f7" strokeWidth="1" strokeDasharray="4 4" />
+              <circle cx="150" cy="240" r="2" fill="#a855f7" />
+              <circle cx="180" cy="255" r="2" fill="#a855f7" />
+              <circle cx="165" cy="285" r="2" fill="#a855f7" />
+              <text x="185" y="260" fill="#a855f7" fontSize="10" fontFamily="monospace">CASSIOPEIA</text>
+              
+              <path d="M 250 50 L 280 80 L 300 60 L 270 40 Z" fill="none" stroke="#a855f7" strokeWidth="1" strokeDasharray="4 4" />
+              <circle cx="250" cy="50" r="2" fill="#a855f7" />
+              <circle cx="280" cy="80" r="2" fill="#a855f7" />
+              <circle cx="300" cy="60" r="2" fill="#a855f7" />
+              <circle cx="270" cy="40" r="2" fill="#a855f7" />
+              <text x="285" y="30" fill="#a855f7" fontSize="10" fontFamily="monospace">CYGNUS</text>
+            </g>
+          </svg>
+        )}
 
         {/* Center observer point */}
         <div className="absolute w-3 h-3 rounded-full bg-[var(--theme-300)] z-20 shadow-[0_0_15px_var(--theme-300)]">

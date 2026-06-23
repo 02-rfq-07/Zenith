@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ZenithSatellite } from '@/workers/orbitalWorker';
 import { useRadarStore } from '@/store/useRadarStore';
 import { Info, Target, Compass, Navigation, Satellite as SatelliteIcon, Share2 } from 'lucide-react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, Html } from '@react-three/drei';
 import Link from 'next/link';
 import { DynamicSatellite } from '@/components/3D/DynamicSatellite';
 
@@ -63,13 +63,15 @@ export default function ObjectInfoPanel({ satellites }: ObjectInfoPanelProps) {
                    <pointLight position={[-10, -10, -10]} intensity={1.0} color="#22d3ee" />
                    <OrbitControls autoRotate autoRotateSpeed={2} enableZoom={true} enablePan={false} />
                    
-                   {isDebris ? (
-                      <DynamicSatellite name={selectedSat.name} isDebris={true} dashboardMode={true} />
-                   ) : (
-                      <group position={[0, -0.2, 0]}>
-                         <DynamicSatellite name={selectedSat.name} isDebris={false} dashboardMode={true} />
-                      </group>
-                   )}
+                   <Suspense fallback={<Html center><div className="text-[10px] text-cyan-500 font-mono animate-pulse">LOADING MESH...</div></Html>}>
+                     {isDebris ? (
+                        <DynamicSatellite name={selectedSat.name} isDebris={true} dashboardMode={true} />
+                     ) : (
+                        <group position={[0, -0.2, 0]}>
+                           <DynamicSatellite name={selectedSat.name} isDebris={false} dashboardMode={true} />
+                        </group>
+                     )}
+                   </Suspense>
                  </Canvas>
                </div>
                

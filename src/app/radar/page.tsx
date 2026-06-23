@@ -21,10 +21,11 @@ import { ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function RadarDashboard() {
-  const { latitude, longitude, timeOffset, showDebris } = useRadarStore();
+  const { latitude, longitude, timeOffset, showDebris, showConstellations, toggleConstellations, ambientAudioEnabled, toggleAudio } = useRadarStore();
   const [tles, setTles] = useState<SatelliteData[]>([]);
   const [satellites, setSatellites] = useState<ZenithSatellite[]>([]);
   const workerRef = useRef<Worker | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Loading Sequence
@@ -73,6 +74,44 @@ export default function RadarDashboard() {
     }
   }, [latitude, longitude, timeOffset, loading]);
 
+  // Ambient Audio Logic
+  useEffect(() => {
+    if (!audioRef.current) {
+      // Create a synthesized space hum using Web Audio API if no file is present
+      // For simplicity, we just use a placeholder data URI or a public space hum url
+      // Because we can't easily synthesize looping audio in a generic <audio> tag without an AudioContext component,
+      // we'll load a very subtle looping base64 audio snippet or rely on a remote asset.
+      audioRef.current = new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_247ce11e3b.mp3?filename=space-hum-1-105156.mp3');
+      audioRef.current.loop = true;
+      audioRef.current.volume = 0.15;
+    }
+
+    if (ambientAudioEnabled) {
+      audioRef.current.play().catch(e => console.log("Audio playback prevented by browser:", e));
+    } else {
+      audioRef.current.pause();
+    }
+  }, [ambientAudioEnabled]);
+
+  const handleLocateISS = async () => {
+    const satellite = await import('satellite.js');
+    const issTle = tles.find(t => t.name.includes('ISS (ZARYA)') || t.name.includes('ISS'));
+    if (issTle) {
+      const satrec = satellite.twoline2satrec(issTle.tle1, issTle.tle2);
+      const d = new Date(Date.now() + timeOffset * 60000);
+      const pv = satellite.propagate(satrec, d);
+      if (pv && typeof pv !== 'boolean' && pv.position && typeof pv.position !== 'boolean') {
+        const gmst = satellite.gstime(d);
+        const gd = satellite.eciToGeodetic(pv.position, gmst);
+        const lat = satellite.degreesLat(gd.latitude);
+        const lng = satellite.degreesLong(gd.longitude);
+        const store = useRadarStore.getState();
+        store.setCoordinates(lat, lng);
+        store.setSelectedObject(issTle.id);
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center font-mono selection:bg-cyan-500/30">
@@ -114,7 +153,15 @@ export default function RadarDashboard() {
         </div>
         
         <div className="flex flex-col items-end space-y-3">
-          <ThemePicker />
+          <div className="flex items-center space-x-3">
+            <button 
+              onClick={toggleAudio}
+              className={`px-3 py-1.5 rounded-md font-mono text-[10px] uppercase tracking-widest whitespace-nowrap transition-colors border ${ambientAudioEnabled ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/50 shadow-[0_0_10px_rgba(6,182,212,0.2)]' : 'bg-white/5 text-white/50 border-white/10 hover:bg-white/10'}`}
+            >
+              AUDIO: {ambientAudioEnabled ? 'ON' : 'OFF'}
+            </button>
+            <ThemePicker />
+          </div>
           <div className="px-4 py-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 backdrop-blur-md flex items-center shadow-[0_0_15px_rgba(0,255,255,0.1)]">
              <div className="w-2 h-2 bg-cyan-400 rounded-full mr-2 shadow-[0_0_8px_cyan] animate-pulse" />
              <span className="text-xs font-mono text-cyan-400 uppercase tracking-widest">Global Scan Active</span>
@@ -171,6 +218,26 @@ export default function RadarDashboard() {
             </div>
           )}
           
+          <motion.div layout className="w-full mt-6 flex justify-center space-x-4 z-20 relative">
+            <button 
+              onClick={handleLocateISS}
+              className="flex-1 py-3 px-4 rounded-xl border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 font-mono text-sm tracking-widest uppercase shadow-[0_0_15px_rgba(6,182,212,0.1)] transition-all flex items-center justify-center space-x-2"
+            >
+              <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></div>
+              <span>Locate ISS</span>
+            </button>
+            
+            <button 
+              onClick={toggleConstellations}
+              className={`flex-1 py-3 px-4 rounded-xl border font-mono text-sm tracking-widest uppercase transition-all flex items-center justify-center space-x-2 ${showConstellations ? 'border-purple-500/50 bg-purple-500/20 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.2)]' : 'border-white/10 bg-white/5 text-white/50 hover:bg-white/10'}`}
+            >
+              <span>Constellations</span>
+              <span className={`text-[10px] ${showConstellations ? 'text-purple-300' : 'text-gray-500'}`}>
+                {showConstellations ? 'ON' : 'OFF'}
+              </span>
+            </button>
+          </motion.div>
+
           <motion.div layout className="w-full mt-6">
             <LiveFeedPanel />
           </motion.div>
