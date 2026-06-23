@@ -1211,7 +1211,7 @@ export default function SolarSystemViewer() {
           <TargetSatellite satrec={targetSatrec} timeOffset={localTimeOffset} isRideMode={isRideMode} velocity={setCurrentSpeed} name={satName} onDoubleClick={(e) => { e.stopPropagation(); setManualTarget(e.point.clone().normalize().multiplyScalar(500)); setIsRideMode(false); }} />
         )}
         <CameraController isRideMode={isRideMode} targetSatrec={targetSatrec} timeOffset={localTimeOffset} controlsRef={controlsRef} manualTarget={manualTarget} selectedPlanet={selectedPlanet} />
-        <OrbitControls ref={controlsRef} enablePan={true} enableZoom={true} enableDamping dampingFactor={0.05} minDistance={0.5} maxDistance={20000} rotateSpeed={0.4} zoomSpeed={0.4} panSpeed={0.4} />
+        <OrbitControls ref={controlsRef} enablePan={true} enableZoom={true} enableDamping dampingFactor={0.05} minDistance={0.01} maxDistance={20000} rotateSpeed={0.4} zoomSpeed={0.4} panSpeed={0.4} />
         
       </Canvas>
 

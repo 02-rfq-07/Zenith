@@ -15,7 +15,8 @@ function CustomSpacecraftModel({ name, size }: { name: string, size: number }) {
     if (name === 'voyager') clone.rotation.x = Math.PI / 4;
     if (name === 'jwst') {
        clone.rotation.x = Math.PI / 2;
-       clone.rotation.y = Math.PI / 2;
+       clone.rotation.y = 0;
+       clone.rotation.z = Math.PI / 2;
     }
     
     clone.scale.multiplyScalar(size);
@@ -62,7 +63,7 @@ export function DeepSpaceMissions({ timeOffset, selectedPlanet }: { timeOffset: 
         <group ref={voyagerRef}>
           <CustomSpacecraftModel name="voyager" size={2} />
           <Html position={[0, 3, 0]} center style={{ pointerEvents: 'none' }}>
-            <div className={`font-mono text-[10px] font-bold uppercase tracking-[0.3em] transition-colors drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] ${selectedPlanet === 'Voyager 1' ? 'text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.8)]' : 'text-white/50'}`}>VOYAGER 1</div>
+            <div className={`font-mono text-[10px] font-bold uppercase tracking-[0.3em] transition-colors ${selectedPlanet === 'Voyager 1' ? 'text-green-400' : 'text-white/50'}`} style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>VOYAGER 1</div>
           </Html>
         </group>
 
@@ -70,7 +71,7 @@ export function DeepSpaceMissions({ timeOffset, selectedPlanet }: { timeOffset: 
         <group ref={jwstRef}>
           <CustomSpacecraftModel name="jwst" size={4} />
           <Html position={[0, 3, 0]} center style={{ pointerEvents: 'none' }}>
-             <div className={`font-mono text-[10px] font-bold uppercase tracking-[0.3em] transition-colors drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] ${selectedPlanet === 'James Webb Space Telescope' ? 'text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.8)]' : 'text-white/50'}`}>JWST</div>
+             <div className={`font-mono text-[10px] font-bold uppercase tracking-[0.3em] transition-colors ${selectedPlanet === 'James Webb Space Telescope' ? 'text-green-400' : 'text-white/50'}`} style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>JWST</div>
           </Html>
         </group>
      </group>
@@ -120,9 +121,10 @@ export function MarsRoverSurface({ radius }: { radius: number }) {
       const phi = Math.PI / 2 - currentLat;
       const theta = currentLon;
       
-      const x = radius * Math.sin(phi) * Math.cos(theta);
-      const y = radius * Math.cos(phi);
-      const z = radius * Math.sin(phi) * Math.sin(theta);
+      const surfaceRadius = radius + 0.05; // Lift up by half its size
+      const x = surfaceRadius * Math.sin(phi) * Math.cos(theta);
+      const y = surfaceRadius * Math.cos(phi);
+      const z = surfaceRadius * Math.sin(phi) * Math.sin(theta);
       roverRef.current.position.set(x, y, z);
       
       const normal = new THREE.Vector3(x,y,z).normalize();
@@ -132,9 +134,9 @@ export function MarsRoverSurface({ radius }: { radius: number }) {
       const nPhi = Math.PI / 2 - nextLat;
       const nTheta = nextLon;
       const lookTarget = new THREE.Vector3(
-        radius * Math.sin(nPhi) * Math.cos(nTheta),
-        radius * Math.cos(nPhi),
-        radius * Math.sin(nPhi) * Math.sin(nTheta)
+        surfaceRadius * Math.sin(nPhi) * Math.cos(nTheta),
+        surfaceRadius * Math.cos(nPhi),
+        surfaceRadius * Math.sin(nPhi) * Math.sin(nTheta)
       );
       
       roverRef.current.up.copy(normal);
@@ -159,9 +161,9 @@ export function MarsRoverSurface({ radius }: { radius: number }) {
 
   return (
     <group ref={roverRef}>
-      <CustomSpacecraftModel name="rover" size={0.05} />
+      <CustomSpacecraftModel name="rover" size={0.08} />
       <Html position={[0, 0.2, 0]} center style={{ pointerEvents: 'none' }}>
-         <div className={`font-mono text-[8px] font-bold uppercase tracking-[0.3em] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.8)]`}>PERSEVERANCE</div>
+         <div className="font-mono text-[8px] font-bold uppercase tracking-[0.3em] text-green-400" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>PERSEVERANCE</div>
       </Html>
     </group>
   );
