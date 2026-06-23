@@ -152,7 +152,7 @@ function CustomPlanetModel({ name, radius, tilt = 0 }: { name: string, radius: n
   );
 }
 
-function Planet({ data, sunPos, isSelected, onClick, onDoubleClick, timeOffset, isRoverDriving }: any) {
+function Planet({ data, sunPos, isSelected, onClick, onDoubleClick, timeOffset }: any) {
   const meshRef = useRef<THREE.Group>(null);
   
   useFrame(() => {
@@ -186,8 +186,8 @@ function Planet({ data, sunPos, isSelected, onClick, onDoubleClick, timeOffset, 
         <group onClick={(e) => { e.stopPropagation(); onClick(data.name); }} onDoubleClick={onDoubleClick}>
           <CustomPlanetModel name={data.name} radius={data.radius} tilt={data.tilt} />
           
-          {data.name === 'Mars' && timeOffset >= 0 && (
-            <MarsRoverSurface radius={data.radius * 2} isDriving={isRoverDriving} />
+          {data.name === 'Mars' && (
+            <MarsRoverSurface radius={data.radius} />
           )}
 
           {/* Invisible hit-box sphere to make clicking easier */}
@@ -349,7 +349,7 @@ function AsteroidBelt({ sunPos, seed, count = 1000 }: { sunPos: THREE.Vector3, s
   );
 }
 
-function CelestialBodies({ onDoubleClick, selectedPlanet, setSelectedPlanet, timeOffset, isRoverDriving }: { onDoubleClick: (e: any) => void, selectedPlanet: string | null, setSelectedPlanet: (v: string) => void, timeOffset: number, isRoverDriving: boolean }) {
+function CelestialBodies({ onDoubleClick, selectedPlanet, setSelectedPlanet, timeOffset }: { onDoubleClick: (e: any) => void, selectedPlanet: string | null, setSelectedPlanet: (v: string) => void, timeOffset: number }) {
   const sunPos = new THREE.Vector3(-200, 0, 0);
   const earthOrbitRadius = 200;
   const moonDistance = 30; // Moved further away
@@ -380,7 +380,7 @@ function CelestialBodies({ onDoubleClick, selectedPlanet, setSelectedPlanet, tim
       <MoonOrbiter onDoubleClick={onDoubleClick} timeOffset={timeOffset} />
 
       {PLANET_DATA.map(p => (
-        <Planet key={p.name} data={p} sunPos={sunPos} isSelected={selectedPlanet === p.name} onClick={setSelectedPlanet} onDoubleClick={onDoubleClick} timeOffset={timeOffset} isRoverDriving={isRoverDriving} />
+        <Planet key={p.name} data={p} sunPos={sunPos} isSelected={selectedPlanet === p.name} onClick={setSelectedPlanet} onDoubleClick={onDoubleClick} timeOffset={timeOffset} />
       ))}
 
       <AsteroidBelt sunPos={sunPos} seed={0} count={60} />
@@ -652,51 +652,29 @@ function CameraController({ isRideMode, targetSatrec, timeOffset, controlsRef, m
         state.camera.position.lerp(desiredPos, 0.05);
       }
     } else if (selectedPlanet === 'Perseverance Mars Rover') {
-      if (isRoverDriving) {
         const tracking = (window as any).roverTracking;
         if (tracking) {
            const target = tracking.pos;
            controlsRef.current.target.lerp(target, 0.1);
-           const desiredPos = target.clone()
-             .add(tracking.up.clone().multiplyScalar(0.1))
-             .sub(tracking.forward.clone().multiplyScalar(0.3));
-           state.camera.position.lerp(desiredPos, 0.1);
-           state.camera.up.lerp(tracking.up, 0.1);
-        }
-      } else {
-        if (timeOffset < 0) {
-           const wp = (window as any).roverTransferTracking;
-           if (wp) {
-             controlsRef.current.target.lerp(wp, 0.05);
-             const dist = state.camera.position.distanceTo(wp);
-             if (dist > 5) {
-               const desiredPos = wp.clone().add(new THREE.Vector3(2, 1, 2));
-               state.camera.position.lerp(desiredPos, 0.05);
-             }
+           const dist = state.camera.position.distanceTo(target);
+           if (dist > 10) {
+             const desiredPos = target.clone()
+               .add(tracking.up.clone().multiplyScalar(2))
+               .sub(tracking.forward.clone().multiplyScalar(5));
+             state.camera.position.lerp(desiredPos, 0.05);
            }
-        } else {
-           // Landed, point at Mars
-           const target = new THREE.Vector3();
-           const p = PLANET_DATA.find(x => x.name === 'Mars')!;
-           const angle = p.angle + (timeOffset * p.speed);
-           target.set(-200 + p.orbitRadius * Math.cos(angle), 0, p.orbitRadius * Math.sin(angle));
-           controlsRef.current.target.lerp(target, 0.05);
-           const desiredPos = target.clone().add(new THREE.Vector3(1, 0.5, 1).normalize().multiplyScalar(15));
-           state.camera.position.lerp(desiredPos, 0.05);
         }
-      }
     } else if (selectedPlanet === 'Voyager 1') {
-       // Approximate static tracking for now
        const t = Math.max(0, state.clock.elapsedTime * 0.1 + (timeOffset * 0.1));
-       const target = new THREE.Vector3(t * 10, t * 2, t * 5);
+       const target = new THREE.Vector3(100 + t * 10, t * 2, t * 5);
        controlsRef.current.target.lerp(target, 0.05);
-       const desiredPos = target.clone().add(new THREE.Vector3(2, 2, 5));
+       const desiredPos = target.clone().add(new THREE.Vector3(5, 5, 10));
        state.camera.position.lerp(desiredPos, 0.05);
     } else if (selectedPlanet === 'James Webb Space Telescope') {
        const ht = state.clock.elapsedTime * 0.5 + (timeOffset * 0.01);
-       const target = new THREE.Vector3(2, Math.sin(ht)*0.5, Math.cos(ht)*0.5);
+       const target = new THREE.Vector3(50, Math.sin(ht)*5, Math.cos(ht)*5);
        controlsRef.current.target.lerp(target, 0.05);
-       const desiredPos = target.clone().add(new THREE.Vector3(2, 1, 2));
+       const desiredPos = target.clone().add(new THREE.Vector3(10, 5, 10));
        state.camera.position.lerp(desiredPos, 0.05);
     } else if (selectedPlanet && selectedPlanet !== 'Earth') {
       const p = PLANET_DATA.find(x => x.name === selectedPlanet);
@@ -748,7 +726,6 @@ export default function SolarSystemViewer() {
   const { timeOffset, setTimeOffset } = useRadarStore();
   
   const [tles, setTles] = useState<{satrec: satellite.SatRec, type: string, id: string, name: string}[]>([]);
-  const [isRoverDriving, setIsRoverDriving] = useState(false);
   const [showTorchlight, setShowTorchlight] = useState(false);
   const [showOrbitPaths, setShowOrbitPaths] = useState(true);
   const [targetSatrec, setTargetSatrec] = useState<any>(null);
@@ -946,6 +923,39 @@ export default function SolarSystemViewer() {
                      </div>
                    </div>
                  </>
+              ) : selectedPlanet === 'Voyager 1' ? (
+                 <>
+                   <h2 className="text-[var(--theme-400)] font-mono tracking-widest uppercase text-xs mb-2 border-b border-white/10 pb-2">Deep Space Network</h2>
+                   <div className="font-bold text-lg leading-tight mb-2 uppercase tracking-wide truncate">Voyager 1</div>
+                   <div className="space-y-3 font-mono text-[10px] uppercase text-white/70">
+                     <div className="flex justify-between"><span className="text-white/40">Status</span><span className="text-green-400 animate-pulse">Interstellar Space</span></div>
+                     <div className="flex justify-between"><span className="text-white/40">Distance</span><span className="text-[var(--theme-400)]">~24.3B km</span></div>
+                     <div className="flex justify-between"><span className="text-white/40">Velocity</span><span>17.0 km/s</span></div>
+                     <div className="flex justify-between"><span className="text-white/40">Launched</span><span>Sep 5, 1977</span></div>
+                   </div>
+                 </>
+              ) : selectedPlanet === 'James Webb Space Telescope' ? (
+                 <>
+                   <h2 className="text-[var(--theme-400)] font-mono tracking-widest uppercase text-xs mb-2 border-b border-white/10 pb-2">Deep Space Network</h2>
+                   <div className="font-bold text-lg leading-tight mb-2 uppercase tracking-wide truncate">James Webb Space Telescope</div>
+                   <div className="space-y-3 font-mono text-[10px] uppercase text-white/70">
+                     <div className="flex justify-between"><span className="text-white/40">Status</span><span className="text-green-400 animate-pulse">Active Science</span></div>
+                     <div className="flex justify-between"><span className="text-white/40">Orbit</span><span className="text-[var(--theme-400)]">Sun-Earth L2</span></div>
+                     <div className="flex justify-between"><span className="text-white/40">Distance</span><span>1.5M km</span></div>
+                     <div className="flex justify-between"><span className="text-white/40">Launched</span><span>Dec 25, 2021</span></div>
+                   </div>
+                 </>
+              ) : selectedPlanet === 'Perseverance Mars Rover' ? (
+                 <>
+                   <h2 className="text-[var(--theme-400)] font-mono tracking-widest uppercase text-xs mb-2 border-b border-white/10 pb-2">Deep Space Network</h2>
+                   <div className="font-bold text-lg leading-tight mb-2 uppercase tracking-wide truncate">Perseverance Rover</div>
+                   <div className="space-y-3 font-mono text-[10px] uppercase text-white/70">
+                     <div className="flex justify-between"><span className="text-white/40">Status</span><span className="text-green-400 animate-pulse">Exploring Jezero Crater</span></div>
+                     <div className="flex justify-between"><span className="text-white/40">Location</span><span className="text-[var(--theme-400)]">Mars Surface</span></div>
+                     <div className="flex justify-between"><span className="text-white/40">Mission Day</span><span>Sol 1100+</span></div>
+                     <div className="flex justify-between"><span className="text-white/40">Landed</span><span>Feb 18, 2021</span></div>
+                   </div>
+                 </>
               ) : (
                  <>
                    <h2 className="text-[var(--theme-400)] font-mono tracking-widest uppercase text-xs mb-2 border-b border-white/10 pb-2">Global Network</h2>
@@ -1022,7 +1032,6 @@ export default function SolarSystemViewer() {
                          setIsRideMode(false);
                          setSelectedPlanet(story.name);
                          setManualTarget(null);
-                         setIsRoverDriving(false);
                       }}
                       className="glass-panel rounded-xl flex-shrink-0 overflow-hidden border border-[var(--theme-500)]/30 hover:border-[var(--theme-500)]/70 hover:bg-[var(--theme-500)]/20 text-left transition-all group relative bg-[#111115]"
                     >
@@ -1072,25 +1081,6 @@ export default function SolarSystemViewer() {
         </div>
 
         <div className="flex flex-col items-end gap-4 pointer-events-auto">
-           {selectedPlanet === 'Perseverance Mars Rover' && timeOffset >= 0 && (
-             <div className="flex flex-col items-end gap-2 animate-in fade-in slide-in-from-right-4">
-               <button 
-                 onClick={() => setIsRoverDriving(!isRoverDriving)}
-                 className={`flex items-center space-x-2 px-6 py-4 rounded-xl border-2 transition-all shadow-[0_0_25px_rgba(var(--theme-rgb),0.5)] ${isRoverDriving ? 'bg-red-500/20 border-red-500 text-red-400' : 'bg-[var(--theme-500)]/20 border-[var(--theme-500)] text-white hover:bg-[var(--theme-500)]/40'}`}
-               >
-                 <Zap size={20} className={isRoverDriving ? 'animate-pulse' : ''} />
-                 <span className="font-mono uppercase tracking-widest text-sm font-black">
-                   {isRoverDriving ? 'DISENGAGE ROVER UPLINK' : 'INITIATE DRIVING MODE'}
-                 </span>
-               </button>
-               {isRoverDriving && (
-                 <div className="glass-panel p-3 rounded-lg border border-red-500/30 text-red-400 font-mono text-[10px] uppercase tracking-widest text-right">
-                   Use <kbd className="border border-red-500/50 px-1 rounded">W</kbd> <kbd className="border border-red-500/50 px-1 rounded">A</kbd> <kbd className="border border-red-500/50 px-1 rounded">S</kbd> <kbd className="border border-red-500/50 px-1 rounded">D</kbd> or Arrows to steer the rover
-                 </div>
-               )}
-             </div>
-           )}
-
            {targetSatrec && (
              <button 
                onClick={() => setIsRideMode(!isRideMode)}
@@ -1206,8 +1196,8 @@ export default function SolarSystemViewer() {
           <meshBasicMaterial side={THREE.BackSide} />
         </mesh>
         
-        <Earth activeLayer={activeLayer} epicTextureUrl={epicTextureUrl} onDoubleClick={(e) => { e.stopPropagation(); setManualTarget(e.point); setIsRideMode(false); setSelectedPlanet('Earth'); setIsRoverDriving(false); }} />
-        <CelestialBodies onDoubleClick={(e) => { e.stopPropagation(); setManualTarget(e.point); setIsRideMode(false); setIsRoverDriving(false); }} selectedPlanet={selectedPlanet} setSelectedPlanet={setSelectedPlanet} timeOffset={localTimeOffset} isRoverDriving={isRoverDriving} />
+        <Earth activeLayer={activeLayer} epicTextureUrl={epicTextureUrl} onDoubleClick={(e) => { e.stopPropagation(); setManualTarget(e.point); setIsRideMode(false); setSelectedPlanet('Earth'); }} />
+        <CelestialBodies onDoubleClick={(e) => { e.stopPropagation(); setManualTarget(e.point); setIsRideMode(false); }} selectedPlanet={selectedPlanet} setSelectedPlanet={setSelectedPlanet} timeOffset={localTimeOffset} />
         
         <DeepSpaceMissions timeOffset={localTimeOffset} selectedPlanet={selectedPlanet} />
         
@@ -1218,7 +1208,7 @@ export default function SolarSystemViewer() {
         ))}
         
         {targetSatrec && activeLayer === 'Satellites Now' && (
-          <TargetSatellite satrec={targetSatrec} timeOffset={localTimeOffset} isRideMode={isRideMode} velocity={setCurrentSpeed} name={satName} onDoubleClick={(e) => { e.stopPropagation(); setManualTarget(e.point.clone().normalize().multiplyScalar(50)); setIsRideMode(false); }} />
+          <TargetSatellite satrec={targetSatrec} timeOffset={localTimeOffset} isRideMode={isRideMode} velocity={setCurrentSpeed} name={satName} onDoubleClick={(e) => { e.stopPropagation(); setManualTarget(e.point.clone().normalize().multiplyScalar(500)); setIsRideMode(false); }} />
         )}
         <CameraController isRideMode={isRideMode} targetSatrec={targetSatrec} timeOffset={localTimeOffset} controlsRef={controlsRef} manualTarget={manualTarget} selectedPlanet={selectedPlanet} />
         <OrbitControls ref={controlsRef} enablePan={true} enableZoom={true} enableDamping dampingFactor={0.05} minDistance={0.5} maxDistance={20000} rotateSpeed={0.4} zoomSpeed={0.4} panSpeed={0.4} />
