@@ -22,7 +22,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Project Zenith",
+  title: "Project Zenith - The Celestial Eye",
   description: "Global Satellite & Orbital Anomaly Tracking System",
 };
 
