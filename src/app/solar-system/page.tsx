@@ -651,7 +651,6 @@ export default function SolarSystemViewer() {
   const [tles, setTles] = useState<{satrec: satellite.SatRec, type: string, id: string, name: string}[]>([]);
   const [showTorchlight, setShowTorchlight] = useState(false);
   const [showOrbitPaths, setShowOrbitPaths] = useState(true);
-  const [targetSatrec, setTargetSatrec] = useState<satellite.SatRec | null>(null);
   const [targetSatrec, setTargetSatrec] = useState<any>(null);
   const [satName, setSatName] = useState('GLOBAL CONSTELLATION');
   const [isRideMode, setIsRideMode] = useState(false);
