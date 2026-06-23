@@ -22,11 +22,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PROJECT ZENITH",
+  title: "Project Zenith",
   description: "Global Satellite & Orbital Anomaly Tracking System",
-  icons: {
-    icon: "/logo.png",
-  },
 };
 
 export default function RootLayout({
