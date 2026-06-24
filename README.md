@@ -38,7 +38,6 @@ A macroscopic view of our cosmic neighborhood.
 ### 🕳️ 3. The Singularity & Black Hole Mini-Game (`/black-hole`)
 A hidden, interactive physics simulation.
 *   **Supermassive Black Hole:** A stunning, shaders-based 3D black hole featuring extreme gravitational lensing, a glowing accretion disk, and an event horizon.
-*   **Orbital Survival Game:** Take control of a spacecraft using `W, A, S, D` keys. Fire your thrusters to establish a stable orbit around the black hole. 
 *   **Newtonian Physics:** If you fly too close, the gravity well will consume you. If you fly too fast, you will be lost to the void. Features high-score tracking for survival time.
 
 ### 🖥️ 4. The Zenith Command Center (Homepage)
@@ -104,5 +103,4 @@ To achieve a successful production build, Project Zenith utilizes a highly custo
 
 <div align="center">
   <p><i>"The universe is under no obligation to make sense to you. But Zenith will try."</i></p>
-  <p>Developed with ❤️ and Advanced AI</p>
 </div>
