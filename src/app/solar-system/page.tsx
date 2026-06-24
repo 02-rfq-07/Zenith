@@ -730,7 +730,7 @@ function CameraController({ isRideMode, targetSatrec, timeOffset, controlsRef, m
   return null;
 }
 
-export default function SolarSystemViewer() {
+function SolarSystemViewerContent() {
   const searchParams = useSearchParams();
   const targetId = searchParams.get('target');
   const { timeOffset, setTimeOffset } = useRadarStore();
@@ -1339,5 +1339,13 @@ export default function SolarSystemViewer() {
       </div>
 
     </div>
+  );
+}
+
+export default function SolarSystemViewer() {
+  return (
+    <React.Suspense fallback={<div className='w-full h-screen bg-black flex items-center justify-center text-cyan-500'>Loading Solar System...</div>}>
+      <SolarSystemViewerContent />
+    </React.Suspense>
   );
 }
